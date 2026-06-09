@@ -1,0 +1,49 @@
+Ultrasound Imaging Techniques for Bone Surface Segmentation
+Email Bluesky Facebook LinkedIn Reddit Whatsapp X
+Summary
+Ultrasound imaging has emerged as a promising non-ionising modality for visualising bone surfaces, offering real-time feedback, portability and cost efficiency compared with conventional CT or MRI. Bone–soft-tissue interfaces produce strong echoes, yet the interpretation of these echoes is hampered by speckle noise, acoustic shadowing and limited field-of-view. Traditional approaches to bone segmentation have relied on heuristic filters, edge detectors and active shape models to delineate cortical margins in two-dimensional B-mode images. More recently, freehand three-dimensional ultrasound acquisition combined with image registration to preoperative volumes has enabled volumetric reconstruction of bone structures intraoperatively. The past several years have witnessed a shift towards machine-learning frameworks—principally convolutional neural networks—for automated bone contour extraction, followed by statistical shape-model-based completion of occluded regions. These advances are driving practical applications in computer-assisted orthopaedic surgery, arthroplasty planning and ultrasound-guided interventions, with submillimetric accuracy now achievable in live settings.
+
+Research from Nature Portfolio
+No recent Nature Portfolio content available.
+
+Research from all publishers
+A lightweight neural network framework has been developed to achieve accurate, real-time segmentation of bone surfaces in two-dimensional ultrasound. By adopting a U-Net backbone, incorporating a dual attention mechanism to capture spatial and channel correlations, and employing a level-set-informed loss function, this approach attains a Dice similarity coefficient approaching 89% at 21 frames per second. Its streamlined architecture holds promise for ultrasound-guided orthopaedic navigation, where rapid feedback is essential.
+
+A comprehensive review of ultrasound-based three-dimensional bone modelling highlights the predominance of machine-learning methods for segmentation but notes a gap in the application of learning-based model completion techniques. The survey examines algorithms for extracting cortical surfaces, outlines the challenges of limited training data and standardised metrics, and forecasts the need for open datasets to enhance generalisability. Identified trends include hybrid pipelines that couple neural segmenters with model-driven reconstruction to overcome occlusions and poor signal regions.
+
+In knee arthroplasty planning, a pipeline combining freehand 3D ultrasound acquisition with a convolutional neural network and statistical shape model has been shown to reconstruct femoral and tibial bone surfaces within submillimetre error margins relative to MRI references. Partial volumetric scans are segmented in real time, then completed via a pre-learnt shape prior, yielding full bone models in under one minute of processing. This proof-of-concept demonstrates the feasibility of ultrasound-only workflows for patient-specific implant design and intraoperative guidance.
+
+Ultrasound Imaging Techniques for Bone Surface Segmentation publication trend
+The graph below shows the total number of articles in ultrasound imaging techniques for bone surface segmentation across all publications each year (not limited to Nature Index journals).
+
+2021
+2022
+2023
+2024
+2025
+0
+5
+10
+15
+Articles from all publications
+Year
+Technical terms
+Speckle noise: Grainy interference pattern in ultrasound caused by coherent scattering, which obscures fine structural details.
+
+U-Net: A convolutional neural network architecture with symmetric encoder–decoder paths and skip connections, widely used for biomedical image segmentation.
+
+Statistical Shape Model (SSM): A deformable model constructed from a training set of anatomies, used to infer complete structures from partial observations.
+
+Dice similarity coefficient: A metric for overlap between predicted and reference segmentations, ranging from 0 (no overlap) to 1 (perfect match).
+
+Level-set loss: A segmentation loss function that emphasises boundary localisation by modelling contour evolution in the network’s output.
+
+References
+Improved Surface‐Based Registration of CT and Intraoperative 3D Ultrasound of Bones. Journal of Healthcare Engineering (2018).
+Knee Bone Models From Ultrasound. IEEE Transactions on Ultrasonics Ferroelectrics and Frequency Control (2023).
+Ultrasound-based 3D bone modelling in computer assisted orthopedic surgery – a review and future challenges. Computer Assisted Surgery (2024).
+Segmentation of bone surface from ultrasound using a lightweight network UBS-Net. Biomedical Physics & Engineering Express (2024).
+About these summaries
+This Nature Research Intelligence Topic summary is created with the cited references and a large language model. We take care to ground generated text with facts, and have systems in place to gain human feedback on the overall quality of the process in line with our AI principles. We strive to create accurate and useful summaries for people unfamiliar with the research topic and welcome feedback that supports this goal. These pages are a beta release and will be updated as we learn how best to help people gain value from a research topic summary.
+
+Do you find the topic summary accurate and helpful?
