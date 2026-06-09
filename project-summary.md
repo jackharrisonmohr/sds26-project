@@ -65,3 +65,43 @@ The expensive, limited-availability part is the **tracker**, *not* a special 3D 
 1. **2D segmentation, or 3D reconstruction?** (the biggest fork)
 2. If 3D: do we assume *any* pose/tracking info, or is trackless the goal?
 3. What's actually in the shared Colab / GitHub repo (data format, weights) that's runnable now?
+
+## Additional questions (strategic — maps to judging: originality, clinical relevance, demo)
+
+The above are *technical scoping*. These decide whether the pitch is strong or a reproduction.
+
+**Originality (biggest risk)** — the dataset, pretrained model, *and* the 2D-vs-3D framing all come
+from the same group (Wu / Fürnstahl, Balgrist + ETH; UltraBoneUDF is Jan 2026).
+
+4. What do *we* add beyond re-running their pretrained model on their data? (Need a wedge.)
+5. Isn't "2D version of UltraBoneUDF" just their obvious next paper — are we racing the dataset's
+   own authors?
+
+**Clinical relevance (lean on the 3 clinical members)**
+
+6. Which procedure / anatomy are we pitching? Data is **ex-vivo lower limb** (tibia, fibula, foot) —
+   is that the right story, or is it distal-radius fracture / spine / pelvis / needle guidance?
+7. What does the surgeon actually need — a contour overlay, a *measurement* (e.g. fracture
+   gap/displacement), a 3D model, or real-time feedback?
+8. What would make a clinician say "I'd use this" vs. "neat tech demo"?
+
+**Ex-vivo → in-vivo gap** (dataset is cadaver; paper notes performance drops on live tissue)
+
+9. Do we have any in-vivo US data, or can we capture our own?
+10. **Is a 2D US probe available at the school?** A live probe → real-time bone overlay would be the
+    single biggest boost to demo quality — and is achievable with the pretrained 2D model.
+
+**Release contents (sharpens Q3)**
+
+11. Does the public release include tracking + CT data, or only images + labels? (Make-or-break for
+    the 3D path — no poses/CT → reconstruction isn't reproducible.)
+12. Colab Pro: enough for fine-tuning, or inference-only?
+
+**Logistics**
+
+13. What's the concrete demo artifact the judges see on Friday? (Decide early, work backward.)
+14. How do 3 CS + 3 clinical split the work over 4 days?
+15. What do our two assigned mentors specialize in — can they steer the angle or unlock data/a probe?
+
+> If only two get asked first: **#4** (our original contribution) and **#10** (probe / in-vivo data
+> for a live demo) — these decide strong pitch vs. reproduction.
