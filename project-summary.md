@@ -23,7 +23,7 @@ Wu et al. (2025), Balgrist / ETH Zurich. The largest public dataset for this tas
   capturing even low-intensity bone regions that human annotators miss.
 - Ships with a **pretrained U-Net** for 2D bone segmentation. Public on GitHub.
 
-## The research thread my colleague assembled
+## The research thread Larissa assembled
 
 The annotated papers form an argument, not just a reading list:
 
