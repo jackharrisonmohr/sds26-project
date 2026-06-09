@@ -34,6 +34,36 @@ The annotated papers form an argument, not just a reading list:
 4. **UltraBoneUDF (2026)** — fixes that with *unsigned* distance functions (handles open/thin
    surfaces) → current state of the art. **But it requires 3D ultrasound.**
 
+## What's already solved vs. what's open
+
+"Bone from ultrasound" isn't one problem — it's a chain, solved at different levels. The core
+**geometry** problem is largely solved (mostly by this same Balgrist/ETH group). The **clinical
+translation** problem is not.
+
+| Sub-problem | Status | Who / what |
+|---|---|---|
+| **1. 2D segmentation** — bone contour in one B-mode frame | **Largely solved** (in-distribution) | UltraBones100k U-Net *beats expert manual labels*; UBS-Net at 21 fps |
+| **2. Auto-labeling** — big datasets without hand-drawing | **Solved** | UltraBones100k's core contribution (tracked CT → labels) |
+| **3. 3D reconstruction from *tracked* sweeps** | **Largely solved, recently** | FUNSR (closed) → UltraBoneUDF (open/thin, sub-mm–1.6 mm), Jan 2026 |
+| **4. Trackless 3D** — reconstruct from a 2D sweep *without* a tracker | **Open / hard** | "Sensorless freehand US" — active research, not solved well |
+| **5. Ex-vivo → in-vivo** — works on cadaver; does it work on live patients? | **Open** | Paper itself notes performance *drops* in vivo |
+| **6. New anatomy** — spine, pelvis, skull, upper limb | **Mostly open** | Model is lower-limb; some femur/pelvis generalization, with caveats |
+| **7. Clinical decision loop** — does the bone surface *change* a surgical action/outcome? | **Open / barely touched** | Papers report geometric metrics (Chamfer/Dice), not surgical task success |
+
+**Implication for originality:** rows 1–3 are solved (re-running them = reproduction; "2D
+UltraBoneUDF" is plausibly the authors' own next paper). The room is in **rows 4–7**:
+
+- **Row 5 (ex-vivo→in-vivo)** — most demo-friendly: run the pretrained model live on a
+  volunteer/phantom; failure cases are themselves a finding. (Needs a probe — Q10.)
+- **Row 7 (clinical decision)** — best clinical-relevance score: build a downstream measurement
+  (fracture gap/displacement, curvature angle, leg-length) on top of segmentation. Clinical members own this.
+- **Row 4 (trackless 3D)** — most original, highest risk; matches Larissa's "no tracker" instinct.
+  Likely too hard to *solve* in 4 days, but pitchable as direction + proof-of-concept.
+- **Row 6 (new anatomy)** — medium; depends on getting data for another bone.
+
+Strongest pitches **combine two** — e.g. run SOTA live in-vivo (row 5) *and* turn its output into a
+fracture-displacement measurement a surgeon acts on (row 7): feasible, original, clinically grounded.
+
 ## What she's proposing
 
 Bring bone extraction into the **clinically practical 2D-ultrasound setting**, rather than the
