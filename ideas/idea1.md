@@ -90,7 +90,7 @@ The expensive, limited-availability part is the **tracker**, *not* a special 3D 
 - 3D reconstruction from 2D US **without tracking** → hard ("sensorless freehand US"); a research
   problem in itself, ambitious for 4 days.
 
-## Open questions for the team
+## Open questions for the team 
 
 1. **2D segmentation, or 3D reconstruction?** (the biggest fork)
 2. If 3D: do we assume *any* pose/tracking info, or is trackless the goal?
