@@ -1,1 +1,4 @@
-[2026-06-11T22:33:36.466Z] GET http://localhost:8765/nolo-ipad.html → 200 (5ms, 65136B)
+[2026-06-11T23:01:09.188Z] GET http://localhost:8777/nolo-ipad-3d.html → 200 (3ms, 76052B)
+[2026-06-11T23:01:09.253Z] GET http://localhost:8777/vendor/three.module.js → 200 (35ms, ?B)
+[2026-06-11T23:01:09.254Z] GET http://localhost:8777/vendor/OrbitControls.js → 200 (21ms, 29868B)
+[2026-06-11T23:01:09.254Z] GET http://localhost:8777/vendor/CSS2DRenderer.js → 200 (18ms, 4407B)
