@@ -254,13 +254,35 @@
   .lg .sw svg{width:13px;height:13px}
   .lg.off{opacity:.4}
   .lg.off .lgname{text-decoration:line-through}
-  svg.plan{flex:1;min-height:0;width:100%;display:block;border-radius:13px;background:
-    repeating-linear-gradient(0deg,transparent 0 38px,rgba(20,40,80,.045) 38px 39px),
-    repeating-linear-gradient(90deg,transparent 0 38px,rgba(20,40,80,.045) 38px 39px),#f5f7fb}
-  .station text{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",sans-serif}
-  .added-pulse{animation:pulse 1.4s ease-in-out 6}
-  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.45}}
-  .plan-note{font-size:10.5px;color:var(--faint);margin-top:8px;line-height:1.45}
+  svg.plan{flex:1;min-height:0;width:100%;display:block}
+  svg.plan text{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",sans-serif}
+  .plan-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:9px}
+  .plan-title{font-size:12.5px;font-weight:700;color:var(--ink)}
+  .plan-dim{font-size:11px;font-weight:600;color:var(--faint);margin-left:3px}
+  .plan-toggles{display:flex;gap:6px}
+  .ptog{border:1px solid var(--line);background:var(--card);color:var(--muted);font:inherit;font-size:11px;font-weight:600;padding:4px 11px;border-radius:999px;cursor:pointer;transition:.12s}
+  .ptog:active{transform:scale(.97)}
+  .ptog.on{background:#eaf3ff;border-color:#cfe2ff;color:var(--accent)}
+  .plan-stage{flex:1;min-height:0;display:flex}
+  .plan-stage.plan-diff{gap:12px}
+  .plan-col{flex:1;display:flex;flex-direction:column;min-height:0;gap:6px}
+  .plan-coltitle{font-size:11px;font-weight:600;color:var(--muted);display:flex;align-items:center;gap:6px}
+  .ai-dot{width:7px;height:7px;border-radius:50%;background:#a855e0;box-shadow:0 0 0 3px #a855e022}
+  .plan-extra{margin-top:9px}
+  .plan-note{font-size:10.5px;color:var(--faint);line-height:1.45}
+  .diff-head{font-size:11.5px;color:var(--ink);margin-bottom:6px}
+  .diff-list{display:flex;flex-wrap:wrap;gap:6px}
+  .diff-chip{font-size:10.5px;color:#a85a00;background:#fff7ec;border:1px solid #ffe2b8;border-radius:9px;padding:4px 9px;line-height:1.3}
+  .diff-chip b{color:#8a4b00}
+  .suggest-banner{display:flex;align-items:center;gap:11px;background:linear-gradient(90deg,#eef4ff,#f4f0ff);border:1px solid #dbe4ff;border-radius:12px;padding:9px 12px}
+  .suggest-banner.applied{background:#eefaf1;border-color:#cdebd6}
+  .sg-ic{width:24px;height:24px;border-radius:7px;display:grid;place-items:center;background:#fff;color:#6c5ce7;font-weight:700;flex:none;box-shadow:var(--shadow)}
+  .suggest-banner.applied .sg-ic{color:#1e8e4e}
+  .sg-tx{font-size:11.5px;color:var(--ink);line-height:1.35;flex:1}
+  .sg-conf{color:var(--muted)}
+  .sg-btn{border:none;background:var(--accent);color:#fff;font:inherit;font-size:11.5px;font-weight:600;padding:7px 16px;border-radius:9px;cursor:pointer;flex:none}
+  .sg-btn:active{transform:scale(.98)}
+  .sg-btn.ghost{background:#eef0f4;color:var(--muted)}
 
   .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
   .card h4{margin:0 0 9px;font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);font-weight:700}
@@ -433,9 +455,16 @@
             <!-- CENTER: floor plan -->
             <section class="col center">
               <div class="card plancard">
-                <div class="legend" id="legend"></div>
-                <svg class="plan" id="plan" viewBox="0 0 200 150" preserveAspectRatio="xMidYMid meet"></svg>
-                <div class="plan-note"><b style="color:#0a7ea4">Shaded</b> = sterile field · <b>dashed line</b> = drape / ether screen (anaesthesia sits outside it). Floor plan is a <b>per-team template</b> surgeons curate — toggle role layers above; tables &amp; positions reflow with procedure, surgeon preference &amp; patient.</div>
+                <div class="plan-head">
+                  <div class="plan-title">Room layout <span class="plan-dim" id="planDim">—</span></div>
+                  <div class="plan-toggles" id="planToggles">
+                    <button class="ptog on" data-tog="people">People</button>
+                    <button class="ptog on" data-tog="equip">Equipment</button>
+                    <button class="ptog on" data-tog="labels">Labels</button>
+                  </div>
+                </div>
+                <div class="plan-stage" id="planStage"></div>
+                <div class="plan-extra" id="planExtra"></div>
               </div>
             </section>
 
@@ -491,15 +520,19 @@
    surgeons own these templates & rules.
    ============================================================ */
 
-/* role icons (24x24, fills inherit from parent) */
+/* role icons — precise line style (24x24, stroked, inherit stroke from parent) */
 const ROLE_ICON = {
-  surgeon:'<circle cx="12" cy="9.2" r="3.4"/><path d="M7.7 7.4C8.5 5.6 10.1 4.4 12 4.4s3.5 1.2 4.3 3c-1.3-.6-2.8-.9-4.3-.9s-3 .3-4.3.9z"/><path d="M5.3 20.4c0-3.5 3-5.6 6.7-5.6s6.7 2.1 6.7 5.6z"/>',
-  assist:'<circle cx="12" cy="8.2" r="3.7"/><path d="M5 20.4c0-3.6 3.1-5.7 7-5.7s7 2.1 7 5.7z"/>',
-  scrub:'<circle cx="12" cy="9" r="3.2"/><path d="M8.6 7.4c.5-1.8 1.8-2.9 3.4-2.9s2.9 1.1 3.4 2.9c-1.1-.5-2.2-.7-3.4-.7s-2.3.2-3.4.7z"/><path d="M5.7 20.4c0-3.4 2.8-5.4 6.3-5.4s6.3 2 6.3 5.4z"/><path d="M11.2 15.9h1.6v1.2h1.2v1.6h-1.2v1.2h-1.6v-1.2H10v-1.6h1.2z"/>',
-  anaes:'<path d="M4 9c2.6-1 5.3-1.5 8-1.5S17.4 8 20 9c-.4 3.5-2.3 6.6-4.7 8.3-.9.6-2 1-3.3 1s-2.4-.4-3.3-1C6.3 15.6 4.4 12.5 4 9z"/><path d="M4.2 8.7 1.3 7l.9-1.6 2.9 1.8zM19.8 8.7l2.9-1.8.9 1.6-2.9 1.7z"/>',
-  circ:'<path d="M12 4.6c3.3 0 6.1 2.2 7 5.2l1.7-.8-.7 4.6-3.9-2.5 1.7-.8A5.2 5.2 0 0 0 12 7.2z"/><path d="M12 19.4c-3.3 0-6.1-2.2-7-5.2l-1.7.8.7-4.6 3.9 2.5-1.7.8A5.2 5.2 0 0 0 12 16.8z"/>',
-  image:'<circle cx="12" cy="12" r="2.1"/><path d="M12 9.4 8.7 3.9a8 8 0 0 1 6.6 0z"/><path d="M13.6 12.9l6.2 1.6a8 8 0 0 1-3.3 5.7z"/><path d="M10.4 12.9l-6.2 1.6a8 8 0 0 0 3.3 5.7z"/>',
-  robot:'<rect x="6" y="3.6" width="12" height="6.4" rx="1.4"/><rect x="6" y="11.4" width="12" height="6.4" rx="1.4"/><rect x="9.4" y="18.8" width="5.2" height="2" rx="1"/>',
+  surgeon:'<circle cx="12" cy="8.6" r="3.3"/><path d="M5.8 19.6c0-3.4 2.8-5.6 6.2-5.6s6.2 2.2 6.2 5.6"/><path d="M8.1 6.5c.9-1.6 2.3-2.4 3.9-2.4s3 .8 3.9 2.4"/>',
+  assist:'<circle cx="12" cy="8.6" r="3.3"/><path d="M5.8 19.6c0-3.4 2.8-5.6 6.2-5.6s6.2 2.2 6.2 5.6"/>',
+  scrub:'<circle cx="12" cy="8.4" r="3.1"/><path d="M6 19.6c0-3.3 2.7-5.4 6-5.4s6 2.1 6 5.4"/><path d="M12 15.3v3.4M10.3 17h3.4"/>',
+  anaes:'<path d="M5 9.3c2.2-1 4.5-1.5 7-1.5s4.8.5 7 1.5c-.4 3-2 5.7-4.2 7.3-.8.6-1.7.9-2.8.9s-2-.3-2.8-.9C7 15 5.4 12.3 5 9.3z"/><path d="M5 9.3 3.2 8M19 9.3l1.8-1.3"/>',
+  circ:'<path d="M18.4 10.2A6.6 6.6 0 0 0 6.2 8.6"/><path d="M5.5 11.2 5.7 7l4 1.3"/><path d="M5.6 13.8A6.6 6.6 0 0 0 17.8 15.4"/><path d="M18.5 12.8 18.3 17l-4-1.3"/>',
+};
+/* equipment glyphs — line style, for squarer pieces only */
+const EQUIP_ICON = {
+  tower:'<rect x="7.5" y="4.5" width="9" height="6.3" rx="1"/><rect x="7.5" y="13.2" width="9" height="6.3" rx="1"/>',
+  carm:'<path d="M16.5 5.5A8 8 0 1 0 16.5 18.5"/><circle cx="12" cy="12" r="1.7"/>',
+  anesm:'<rect x="6.5" y="4.5" width="11" height="15" rx="1.5"/><path d="M9 8.5h6M9 11.5h6"/><circle cx="12" cy="15.5" r="1.5"/>',
 };
 /* per-OR specialty icons */
 const OR_ICON = {
@@ -509,14 +542,20 @@ const OR_ICON = {
   uro:'<path d="M9 4.4c2.7 0 4.6 2.3 4.6 5.5 0 1.7 1.1 2.5 2.2 3.2 1.4.9 2.3 2.1 2.3 3.9a2.8 2.8 0 0 1-5.2 1.3C12 16.7 11.1 16.2 9.8 16.2 7 16.2 5.1 13.7 5.1 10 5.1 6.7 6.6 4.4 9 4.4z"/>',
 };
 
-const ROLES = {
-  surgeon:{label:'Surgeon', color:'#007aff', kind:'person', glyph:'Sx'},
-  assist :{label:'Assistant', color:'#34aadc', kind:'person', glyph:'A'},
-  scrub  :{label:'Scrub nurse + back table', color:'#30b85c', kind:'person', glyph:'SN'},
-  anaes  :{label:'Anesthesia', color:'#a855e0', kind:'person', glyph:'An'},
-  circ   :{label:'Circulating / turnover', color:'#ff9500', kind:'person', glyph:'C'},
-  image  :{label:'Imaging (C-arm)', color:'#00a3c4', kind:'gear', glyph:'+'},
-  robot  :{label:'Equipment / tower', color:'#8e8e93', kind:'gear', glyph:'#'},
+/* unified catalog of people + equipment. Equipment carries a real footprint in metres (w×h). */
+const KINDS = {
+  surgeon:{label:'Surgeon', color:'#0a84ff', cat:'person'},
+  assist :{label:'Assistant', color:'#32ade6', cat:'person'},
+  scrub  :{label:'Scrub nurse', color:'#28b463', cat:'person'},
+  anaes  :{label:'Anaesthetist', color:'#a855e0', cat:'person'},
+  circ   :{label:'Circulating', color:'#ff9f0a', cat:'person'},
+  table    :{label:'OR table', color:'#5b6b82', cat:'equip', w:2.0, h:0.6},
+  backtable:{label:'Scrub back table', color:'#28b463', cat:'equip', w:1.5, h:0.6},
+  mayo     :{label:'Mayo stand', color:'#28b463', cat:'equip', w:0.55, h:0.45},
+  anesm    :{label:'Anaesthesia machine', color:'#a855e0', cat:'equip', w:0.85, h:0.65},
+  tower    :{label:'Lap tower', color:'#8e8e93', cat:'equip', w:0.65, h:0.6},
+  carm     :{label:'C-arm', color:'#00a3c4', cat:'equip', w:1.7, h:1.2},
+  implant  :{label:'Implant table', color:'#8e8e93', cat:'equip', w:1.5, h:0.6},
 };
 
 const PROCEDURES = {
@@ -524,18 +563,19 @@ const PROCEDURES = {
     name:'Laparoscopic Cholecystectomy', short:'Lap Chole',
     age:'58 y', ht:'168 cm', wt:'72 kg', bmi:25.5,
     position:{name:'Supine · reverse Trendelenburg, left tilt', equip:['Arm boards (both arms out)','Foot board + safety strap','Sequential compression devices']},
-    table:{cx:100,cy:78,w:34,h:78,rot:0, patient:'supine'},
-    stations:[
-      {role:'anaes', x:100, y:20, label:'Anaes'},
-      {role:'surgeon', x:60, y:62, label:'Surgeon'},
-      {role:'assist', x:60, y:98, label:'Cam/Asst'},
-      {role:'scrub', x:150, y:110, label:'Scrub'},
-      {role:'robot', x:150, y:42, label:'Tower'},
-      {role:'circ', x:178, y:76, label:'Circ'},
+    /* layout: positions are fractions of the room; equipment is drawn at real scale */
+    layout:[
+      {kind:'table', fx:0.5, fy:0.5, axis:'v', patient:'supine'},
+      {kind:'anaes', fx:0.5, fy:0.2},
+      {kind:'anesm', fx:0.34, fy:0.14},
+      {kind:'surgeon', fx:0.34, fy:0.46},
+      {kind:'assist', fx:0.34, fy:0.64, label:'Cam/Asst'},
+      {kind:'mayo', fx:0.6, fy:0.4},
+      {kind:'scrub', fx:0.7, fy:0.64, side:true},
+      {kind:'backtable', fx:0.84, fy:0.58, side:true},
+      {kind:'tower', fx:0.72, fy:0.26},
+      {kind:'circ', fx:0.88, fy:0.84},
     ],
-    scrubSlots:{R:{x:150,y:110}, L:{x:42,y:128}},
-    sterileField:{cx:100,cy:86,rx:70,ry:50},
-    etherScreen:{type:'h', pos:52, a:74, b:126},
     instruments:[
       {nm:'Maryland dissector'},{nm:'Hook electrocautery'},{nm:'Clip applier (Hem-o-lok)'},
       {nm:'Laparoscopic scissors'},{nm:'Bipolar forceps'},{nm:'Grasper x2'},
@@ -559,18 +599,18 @@ const PROCEDURES = {
     name:'Total Hip Arthroplasty (posterior)', short:'Total Hip',
     age:'71 y', ht:'175 cm', wt:'88 kg', bmi:28.7,
     position:{name:'Lateral decubitus (operative side up)', equip:['Bean-bag positioner','Hip positioning posts (ant + post)','Axillary roll','Arm support / sled','Pillow between legs']},
-    table:{cx:100,cy:78,w:78,h:30,rot:0, patient:'lateral'},
-    stations:[
-      {role:'anaes', x:26, y:76, label:'Anaes'},
-      {role:'surgeon', x:100, y:120, label:'Surgeon'},
-      {role:'assist', x:100, y:36, label:'Asst'},
-      {role:'scrub', x:150, y:118, label:'Scrub'},
-      {role:'robot', x:162, y:40, label:'Implants'},
-      {role:'circ', x:178, y:78, label:'Circ'},
+    layout:[
+      {kind:'table', fx:0.5, fy:0.5, axis:'h', patient:'lateral'},
+      {kind:'anaes', fx:0.16, fy:0.5},
+      {kind:'anesm', fx:0.1, fy:0.32},
+      {kind:'assist', fx:0.5, fy:0.24},
+      {kind:'surgeon', fx:0.5, fy:0.76},
+      {kind:'mayo', fx:0.68, fy:0.64},
+      {kind:'scrub', fx:0.78, fy:0.76, side:true},
+      {kind:'backtable', fx:0.87, fy:0.6, side:true},
+      {kind:'implant', fx:0.83, fy:0.3},
+      {kind:'circ', fx:0.9, fy:0.88},
     ],
-    scrubSlots:{R:{x:150,y:118}, L:{x:40,y:118}},
-    sterileField:{cx:110,cy:80,rx:64,ry:56},
-    etherScreen:{type:'v', pos:70, a:48, b:112},
     instruments:[
       {nm:'Hohmann retractors x3'},{nm:'Bone hooks'},{nm:'Acetabular reamers (set)'},
       {nm:'Broach handle + broaches'},{nm:'Cup impactor'},{nm:'Femoral head trials'},
@@ -621,6 +661,7 @@ const FACTORS = {
 const FLABEL = {latex:'Latex allergy', anticoag:'Anticoagulated', adhesions:'Adhesions', airway:'Difficult airway', bigbmi:'BMI 41'};
 const SCHEDULE = [
   { or:'OR 4', name:'General Surgery', icon:'general', color:'#007aff',
+    room:{w:6.4, h:5.8, door:{side:'bottom', at:0.22, width:1.2}},
     cases:[
       {time:'07:30', dur:'45m', proc:'lap_chole', surg:'drA', factors:[], status:'done',
         patient:{name:'Doe, Jane', mrn:'MRN 04412857', age:'58 y', ht:'168 cm', wt:'72 kg', bmi:25.5}},
@@ -630,6 +671,7 @@ const SCHEDULE = [
         patient:{name:'Nguyen, Mai', mrn:'MRN 05519983', age:'47 y', ht:'160 cm', wt:'126 kg', bmi:41}},
     ]},
   { or:'OR 2', name:'Orthopedics', icon:'ortho', color:'#ff9500',
+    room:{w:7.6, h:6.8, door:{side:'left', at:0.74, width:1.3}},
     cases:[
       {time:'08:00', dur:'95m', proc:'tha', surg:'drB', factors:[], status:'now',
         patient:{name:'Ibrahim, Yusuf', mrn:'MRN 06642019', age:'71 y', ht:'175 cm', wt:'88 kg', bmi:28.7}},
@@ -637,6 +679,7 @@ const SCHEDULE = [
         patient:{name:'Olsen, Karin', mrn:'MRN 08820471', age:'69 y', ht:'164 cm', wt:'77 kg', bmi:28.6}},
     ]},
   { or:'OR 7', name:'Hepatobiliary', icon:'hpb', color:'#34c759',
+    room:{w:5.8, h:5.2, door:{side:'bottom', at:0.78, width:1.1}},
     cases:[
       {time:'09:00', dur:'60m', proc:'lap_chole', surg:'drA', factors:['latex'], status:'next',
         patient:{name:'Costa, Helena', mrn:'MRN 05210774', age:'53 y', ht:'162 cm', wt:'68 kg', bmi:25.9}},
@@ -644,6 +687,7 @@ const SCHEDULE = [
         patient:{name:'Schmidt, Tomas', mrn:'MRN 09934180', age:'60 y', ht:'180 cm', wt:'90 kg', bmi:27.8}},
     ]},
   { or:'OR 5', name:'Urology', icon:'uro', color:'#a855e0',
+    room:{w:6.0, h:6.6, door:{side:'right', at:0.24, width:1.2}},
     cases:[
       {time:'08:45', dur:'55m', proc:'lap_chole', surg:'drA', factors:[], status:'ready',
         patient:{name:'Ferreira, Luís', mrn:'MRN 04488321', age:'66 y', ht:'171 cm', wt:'81 kg', bmi:27.7}},
@@ -653,11 +697,12 @@ const SCHEDULE = [
 /* ---------------- state ---------------- */
 const state = {
   view:'schedule', selOR:0,
-  or:'OR 4', orMeta:SCHEDULE[0],
+  or:'OR 4', orMeta:SCHEDULE[0], room:SCHEDULE[0].room,
   proc:'lap_chole', surg:'drA',
   patient:SCHEDULE[0].cases[0].patient,
   factors:new Set(), video:false,
-  layers:new Set(Object.keys(ROLES)),
+  status:'done', applied:false,
+  showPeople:true, showEquip:true, showLabels:true,
 };
 
 /* ---------------- helpers ---------------- */
@@ -700,6 +745,16 @@ rightToggle.onclick=()=>{
   rightToggle.classList.toggle('active',collapsed);
   rightToggle.title=collapsed?'Show pick list':'Hide pick list';
 };
+
+/* plan layer toggles */
+document.querySelectorAll('#planToggles .ptog').forEach(b=>b.onclick=()=>{
+  const t=b.dataset.tog;
+  if(t==='people') state.showPeople=!state.showPeople;
+  if(t==='equip')  state.showEquip=!state.showEquip;
+  if(t==='labels') state.showLabels=!state.showLabels;
+  b.classList.toggle('on');
+  render();
+});
 
 /* settings popover */
 const sBtn=document.getElementById('settingsBtn'), sPop=document.getElementById('settingsPop');
@@ -769,11 +824,11 @@ function renderSchedule(){
 
 function openCase(orIdx, caseIdx){
   const o=SCHEDULE[orIdx], c=o.cases[caseIdx];
-  state.selOR=orIdx; state.orMeta=o; state.or=o.or;
+  state.selOR=orIdx; state.orMeta=o; state.or=o.or; state.room=o.room;
   state.proc=c.proc; state.surg=c.surg;
   state.patient=c.patient;
   state.factors=new Set(c.factors||[]);
-  state.video=false;
+  state.video=false; state.status=c.status; state.applied=false;
   showView('case');
 }
 
@@ -801,79 +856,172 @@ function render(){
   const om=state.orMeta||SCHEDULE[0];
   document.getElementById('caseOrBadge').innerHTML=`<span style="background:${om.color}1a;width:34px;height:34px;border-radius:10px;display:grid;place-items:center">${iconSvg(OR_ICON[om.icon],om.color,19)}</span>`;
 
-  renderLegend();
   renderPlan(P,S,facs);
   renderPosition(P,facs);
   renderMaterials(P,facs);
 }
 
-function renderLegend(){
-  const el=document.getElementById('legend');el.innerHTML='';
-  for(const k in ROLES){
-    const on=state.layers.has(k), R=ROLES[k];
-    const d=document.createElement('div');d.className='lg'+(on?'':' off');
-    d.innerHTML=`<span class="sw" style="background:${R.color}1f">${iconSvg(ROLE_ICON[k],R.color,13)}</span><span class="lgname">${R.label}</span>`;
-    d.onclick=()=>{on?state.layers.delete(k):state.layers.add(k);render();};
-    el.appendChild(d);
-  }
+/* ===================== floor-plan engine (to scale, metres) ===================== */
+const NS_SVG='http://www.w3.org/2000/svg';
+const U=24;        // viewBox units per metre
+const MARGIN=24;   // padding around the room
+
+/* learned drift — where pieces actually end up vs the plan (fractions of room) */
+const DRIFT={
+  lap_chole:[
+    {kind:'backtable', dfx:0.09, dfy:0.07, note:'pulled toward the door for faster restock'},
+    {kind:'tower',     dfx:-0.07, dfy:0.05, note:'angled into the surgeon’s eyeline'},
+    {kind:'mayo',      dfx:-0.07, dfy:0.05, note:'moved within arm’s reach'},
+    {kind:'circ',      dfx:-0.07, dfy:-0.05, note:'repositioned at the count station'},
+  ],
+  tha:[
+    {kind:'backtable', dfx:0.07, dfy:0.06, note:'shifted toward the implant trays'},
+    {kind:'implant',   dfx:-0.07, dfy:0.05, note:'brought closer to the field'},
+    {kind:'mayo',      dfx:0.07, dfy:0.06, note:'moved toward the scrub nurse'},
+  ],
+};
+/* the single highest-yield suggestion for a planned case */
+const SUGGEST={
+  lap_chole:{kind:'backtable', dfx:0.09, dfy:0.07, conf:'9 of the last 12 lap choles', text:'Stage the scrub back table ~1.1 m closer to the door'},
+  tha:{kind:'implant', dfx:-0.07, dfy:0.05, conf:'7 of the last 10 hip cases', text:'Stage the implant table ~0.8 m closer to the field'},
+};
+
+function kc(k){return KINDS[k]?KINDS[k].cat:'equip';}
+function kcol(k){return KINDS[k]?KINDS[k].color:'#8e8e93';}
+function clampF(v){return Math.max(0.08,Math.min(0.92,v));}
+function doorPos(room){const d=(room&&room.door)||{side:'bottom',at:0.5};
+  if(d.side==='bottom')return{fx:d.at,fy:0.97}; if(d.side==='top')return{fx:d.at,fy:0.03};
+  if(d.side==='left')return{fx:0.03,fy:d.at}; return{fx:0.97,fy:d.at};}
+/* where a drifted piece ends up — the back table tracks toward this room's door */
+function driftTo(it,d,room){
+  if(d.kind==='backtable'){const dp=doorPos(room);return{fx:clampF(it.fx+(dp.fx-it.fx)*0.34),fy:clampF(it.fy+(dp.fy-it.fy)*0.3)};}
+  return {fx:clampF(it.fx+d.dfx),fy:clampF(it.fy+d.dfy)};
 }
 
-function renderPlan(P,S,facs){
-  const svg=document.getElementById('plan');
-  const NS='http://www.w3.org/2000/svg';
+/* resolve a procedure layout into concrete items */
+function buildItems(P,S,facs){
+  let items=(P.layout||[]).map((it,i)=>({...it,id:it.kind+'_'+i,label:it.label||KINDS[it.kind].label}));
+  if(S.scrubSide==='L' && state.proc!=='lap_chole') items.forEach(it=>{ if(it.side) it.fx=1-it.fx; });
+  if(state.surg==='drB' && state.proc==='lap_chole') items.push({kind:'carm', fx:0.18, fy:0.24, id:'carm_x', label:'C-arm'});
+  if(state.applied){ const sg=SUGGEST[state.proc]; if(sg){ const it=items.find(x=>x.kind===sg.kind); if(it){const p=driftTo(it,sg,state.room); it.fx=p.fx; it.fy=p.fy; it.moved=true;} } }
+  let ai=0;
+  facs.forEach(ff=>(ff.crew||[]).forEach(c=>{ items.push({kind:c.role||'circ', fx:0.13+ai*0.2, fy:0.92, label:c.tag||('+'+(c.who||'').split(' ')[0]), added:true, id:'add_'+ai}); ai++; }));
+  return items;
+}
+/* observed end-of-case layout = planned + learned drift */
+function observedItems(P,S,facs,room){
+  const items=buildItems(P,S,facs).map(it=>({...it}));
+  const changes=[];
+  (DRIFT[state.proc]||[]).forEach(d=>{ const it=items.find(x=>x.kind===d.kind); if(it){ const p=driftTo(it,d,room); it.fx=p.fx; it.fy=p.fy; it.moved=true; changes.push({id:it.id, label:it.label, note:d.note}); } });
+  return {items, changes};
+}
+
+function drawPlan(svg, room, items, opts={}){
   svg.innerHTML='';
-  const add=(tag,attrs,parent)=>{const e=document.createElementNS(NS,tag);
-    for(const k in attrs)e.setAttribute(k,attrs[k]);(parent||svg).appendChild(e);return e;};
-  const txt=(attrs,s,parent)=>{const e=add('text',attrs,parent);e.textContent=s;return e;};
+  svg.setAttribute('viewBox',`0 0 ${room.w*U+2*MARGIN} ${room.h*U+2*MARGIN}`);
+  svg.setAttribute('preserveAspectRatio','xMidYMid meet');
+  const add=(t,a,p)=>{const e=document.createElementNS(NS_SVG,t);for(const k in a)e.setAttribute(k,a[k]);(p||svg).appendChild(e);return e;};
+  const txt=(a,s,p)=>{const e=add('text',a,p);e.textContent=s;return e;};
+  const X=mx=>MARGIN+mx*U, Y=my=>MARGIN+my*U, FX=fx=>X(fx*room.w), FY=fy=>Y(fy*room.h);
+  const lab=(x,y,s,hot)=>txt({x,y,'text-anchor':'middle',fill:hot?'#b06a00':'#566071','font-size':6,'font-weight':600,stroke:'#fbfcfe','stroke-width':1.9,'stroke-opacity':0.85,'paint-order':'stroke'},s);
 
-  const grad=add('radialGradient',{id:'sterile',cx:'50%',cy:'50%',r:'50%'},add('defs',{}));
-  add('stop',{offset:'0%','stop-color':'#00a3c4','stop-opacity':'0.18'},grad);
-  add('stop',{offset:'72%','stop-color':'#00a3c4','stop-opacity':'0.06'},grad);
-  add('stop',{offset:'100%','stop-color':'#00a3c4','stop-opacity':'0'},grad);
+  // 1 m floor grid
+  const grid=add('g',{});
+  for(let g=0;g<=Math.round(room.w);g++) add('line',{x1:X(g),y1:Y(0),x2:X(g),y2:Y(room.h),stroke:'#e8ecf3','stroke-width':0.7},grid);
+  for(let g=0;g<=Math.round(room.h);g++) add('line',{x1:X(0),y1:Y(g),x2:X(room.w),y2:Y(g),stroke:'#e8ecf3','stroke-width':0.7},grid);
+  // walls
+  add('rect',{x:X(0),y:Y(0),width:room.w*U,height:room.h*U,rx:2.5,fill:'none',stroke:'#9aa9bd','stroke-width':2.4});
+  // door — wall gap + swing arc
+  const d=room.door;
+  if(d){ const w=d.width*U;
+    if(d.side==='bottom'||d.side==='top'){ const x=X(d.at*room.w), y=Y(d.side==='top'?0:room.h), s=d.side==='top'?1:-1, a=x-w/2;
+      add('line',{x1:a,y1:y,x2:x+w/2,y2:y,stroke:'#fbfcfe','stroke-width':3.6});
+      add('path',{d:`M${a} ${y} A ${w} ${w} 0 0 ${s<0?1:0} ${a} ${y+s*w}`,fill:'none',stroke:'#b9c4d4','stroke-width':1,'stroke-dasharray':'2 2'});
+      add('line',{x1:a,y1:y,x2:a,y2:y+s*w,stroke:'#b9c4d4','stroke-width':1.2}); }
+    else { const y=Y(d.at*room.h), x=X(d.side==='left'?0:room.w), s=d.side==='left'?1:-1, a=y-w/2;
+      add('line',{x1:x,y1:a,x2:x,y2:y+w/2,stroke:'#fbfcfe','stroke-width':3.6});
+      add('path',{d:`M${x} ${a} A ${w} ${w} 0 0 ${s<0?1:0} ${x+s*w} ${a}`,fill:'none',stroke:'#b9c4d4','stroke-width':1,'stroke-dasharray':'2 2'});
+      add('line',{x1:x,y1:a,x2:x+s*w,y2:a,stroke:'#b9c4d4','stroke-width':1.2}); }
+  }
+  // sterile field around the table
+  const table=items.find(it=>it.kind==='table');
+  if(table){ const horiz=table.axis==='h';
+    add('ellipse',{cx:FX(table.fx),cy:FY(table.fy),rx:((horiz?2:0.6)/2+0.85)*U,ry:((horiz?0.6:2)/2+0.85)*U,
+      fill:'#00a3c4','fill-opacity':0.05,stroke:'#00a3c4','stroke-opacity':0.3,'stroke-dasharray':'3 2.5','stroke-width':0.8}); }
 
-  add('rect',{x:6,y:6,width:188,height:138,rx:9,fill:'none',stroke:'#c7c9d1','stroke-dasharray':'3 3'});
+  // ghosts (suggested target)
+  (opts.ghosts||[]).forEach(g=>{ const cx=FX(g.fx),cy=FY(g.fy),sz=KINDS[g.kind];
+    if(sz.cat==='equip'){ const w=sz.w*U,h=sz.h*U; add('rect',{x:cx-w/2,y:cy-h/2,width:w,height:h,rx:2.5,fill:'#ff9f0a','fill-opacity':0.06,stroke:'#ff9f0a','stroke-width':1.4,'stroke-dasharray':'3 2'}); }
+    else add('circle',{cx,cy,r:0.3*U,fill:'none',stroke:'#ff9f0a','stroke-width':1.4,'stroke-dasharray':'3 2'}); });
+  // movement arrows
+  (opts.arrows||[]).forEach(ar=>{ const x1=FX(ar.fx0),y1=FY(ar.fy0),x2=FX(ar.fx1),y2=FY(ar.fy1),an=Math.atan2(y2-y1,x2-x1),h=4.4;
+    add('line',{x1,y1,x2,y2,stroke:'#ff9f0a','stroke-width':1.6,'stroke-linecap':'round'});
+    add('path',{d:`M${x2} ${y2} L${x2-h*Math.cos(an-0.5)} ${y2-h*Math.sin(an-0.5)} L${x2-h*Math.cos(an+0.5)} ${y2-h*Math.sin(an+0.5)} Z`,fill:'#ff9f0a'}); });
 
-  const f=P.sterileField;
-  if(f) add('ellipse',{cx:f.cx,cy:f.cy,rx:f.rx,ry:f.ry,fill:'url(#sterile)',
-    stroke:'#00a3c4','stroke-opacity':'0.35','stroke-dasharray':'2 3','stroke-width':'0.6'});
-  const eth=P.etherScreen;
-  if(eth){const a={stroke:'#8a93a6','stroke-dasharray':'1.6 2','stroke-width':'0.8','stroke-opacity':'0.8'};
-    if(eth.type==='h') add('line',{x1:eth.a,y1:eth.pos,x2:eth.b,y2:eth.pos,...a});
-    else add('line',{x1:eth.pos,y1:eth.a,x2:eth.pos,y2:eth.b,...a});}
-
-  const t=P.table;
-  add('rect',{x:t.cx-t.w/2,y:t.cy-t.h/2,width:t.w,height:t.h,rx:7,fill:'#e3eeff',stroke:'#007aff','stroke-width':'1','stroke-opacity':'0.7'});
-  const head = t.patient==='lateral' ? {x:t.cx-t.w/2+8,y:t.cy} : {x:t.cx,y:t.cy-t.h/2+8};
-  add('circle',{cx:head.x,cy:head.y,r:5.4,fill:'#007aff','fill-opacity':'0.85'});
-  txt({x:t.cx,y:t.cy+(t.patient==='lateral'?2:20),'text-anchor':'middle',fill:'#8a93a6','font-size':'6.4','font-style':'italic'},
-    t.patient==='lateral'?'patient · lateral':'patient');
-
-  let stations=P.stations.map(s=>({...s}));
-  if(P.scrubSlots){const slot=P.scrubSlots[S.scrubSide]||P.scrubSlots.R;
-    stations.forEach(s=>{if(s.role==='scrub'){s.x=slot.x;s.y=slot.y;}});}
-  if(state.surg==='drB' && state.proc==='lap_chole') stations.push({role:'image',x:40,y:40,label:'C-arm'});
-  const added=[];
-  facs.forEach(ff=>(ff.crew||[]).forEach(c=>added.push({role:c.role,label:c.tag||('+'+(c.who||'').split(' ')[0]),added:true})));
-  added.forEach((a,i)=>{a.x=40+i*52;a.y=132;});
-  stations=stations.concat(added);
-
-  stations.forEach(s=>{
-    if(!state.layers.has(s.role))return;
-    const R=ROLES[s.role], label=s.label||R.label;
-    const g=add('g',{class:'station'+(s.added?' added-pulse':'')});
-    if(R.kind==='gear'){
-      add('rect',{x:s.x-9,y:s.y-9,width:18,height:18,rx:4.5,fill:R.color,'fill-opacity':'0.95',
-        stroke:s.added?'#ff9f0a':'#ffffff','stroke-opacity':s.added?'1':'0.85','stroke-width':s.added?'1.3':'0.8'},g);
-    } else {
-      add('circle',{cx:s.x,cy:s.y,r:9,fill:R.color,
-        stroke:s.added?'#ff9f0a':'#ffffff','stroke-width':s.added?'1.7':'1.2'},g);
+  // items
+  items.forEach(it=>{
+    const cat=kc(it.kind);
+    if(it.kind!=='table'){ if(cat==='person'&&!state.showPeople)return; if(cat==='equip'&&!state.showEquip)return; }
+    const cx=FX(it.fx), cy=FY(it.fy), col=kcol(it.kind);
+    const hot=(opts.highlight&&opts.highlight.has(it.id))||it.moved;
+    if(it.kind==='table'){ const horiz=it.axis==='h', w=(horiz?2:0.6)*U, h=(horiz?0.6:2)*U;
+      add('rect',{x:cx-w/2,y:cy-h/2,width:w,height:h,rx:5,fill:'#e3eeff',stroke:'#0a84ff','stroke-width':1.3,'stroke-opacity':0.75});
+      const hd=horiz?{x:cx-w/2+0.34*U,y:cy}:{x:cx,y:cy-h/2+0.34*U};
+      add('circle',{cx:hd.x,cy:hd.y,r:0.27*U,fill:'#0a84ff','fill-opacity':0.85});
+      if(state.showLabels) lab(cx, cy+(horiz?0.6*U/2:2*U/2)+7, 'patient'); return; }
+    if(cat==='equip'){ const sz=KINDS[it.kind], w=sz.w*U, h=sz.h*U;
+      add('rect',{x:cx-w/2,y:cy-h/2,width:w,height:h,rx:2.5,fill:col,'fill-opacity':hot?0.3:0.16,stroke:hot?'#ff9f0a':col,'stroke-width':hot?2:1.2,'stroke-opacity':hot?1:0.75});
+      const gl=EQUIP_ICON[it.kind];
+      if(gl && Math.min(w,h)>=0.58*U){ const g=add('g',{transform:`translate(${cx-7.2} ${cy-7.2}) scale(0.6)`,fill:'none',stroke:col,'stroke-width':1.7,'stroke-linecap':'round','stroke-linejoin':'round','stroke-opacity':0.9}); g.innerHTML=gl; }
+      if(state.showLabels) lab(cx, cy+h/2+6.5, it.label, hot);
+    } else { const r=0.3*U;
+      add('circle',{cx,cy,r,fill:col,stroke:hot?'#ff9f0a':(it.added?'#ff9f0a':'#fff'),'stroke-width':(hot||it.added)?2:1.4});
+      const g=add('g',{transform:`translate(${cx-7.2} ${cy-7.2}) scale(0.6)`,fill:'none',stroke:'#fff','stroke-width':2,'stroke-linecap':'round','stroke-linejoin':'round'}); g.innerHTML=ROLE_ICON[it.kind]||'';
+      if(state.showLabels) lab(cx, cy+r+6.5, it.label, hot||it.added);
     }
-    const ig=add('g',{transform:`translate(${s.x-6} ${s.y-6}) scale(0.5)`,fill:'#ffffff'},g);
-    ig.innerHTML=ROLE_ICON[s.role]||'';
-    const dy = s.added ? -13 : 17;
-    txt({x:s.x,y:s.y+dy,'text-anchor':'middle',fill:s.added?'#b06a00':'#3a3f4b','font-size':'6','font-weight':'600',
-      stroke:'#f5f7fb','stroke-width':'1.6','stroke-opacity':'0.9','paint-order':'stroke'},label,g);
   });
+}
+
+function newSvg(){const s=document.createElementNS(NS_SVG,'svg');s.setAttribute('class','plan');return s;}
+
+function renderPlan(P,S,facs){
+  const room=state.room||SCHEDULE[0].room;
+  document.getElementById('planDim').textContent=`${state.or} · ${room.w.toFixed(1)} × ${room.h.toFixed(1)} m`;
+  const stage=document.getElementById('planStage'), extra=document.getElementById('planExtra');
+  stage.innerHTML=''; extra.innerHTML='';
+  const planned=buildItems(P,S,facs);
+
+  if(state.status==='done'){
+    const {items:obs, changes}=observedItems(P,S,facs,room);
+    const hl=new Set(changes.map(c=>c.id));
+    stage.className='plan-stage plan-diff';
+    const mkCol=(title,ai)=>{const c=document.createElement('div');c.className='plan-col';
+      c.innerHTML=`<div class="plan-coltitle">${ai?'<span class="ai-dot"></span>':''}${title}</div>`;
+      const s=newSvg();c.appendChild(s);stage.appendChild(c);return s;};
+    const svgP=mkCol('Planned setup',false), svgO=mkCol('Observed from OR video · AI',true);
+    drawPlan(svgP, room, planned, {highlight:hl});
+    const arrows=changes.map(c=>{const a=planned.find(x=>x.id===c.id),b=obs.find(x=>x.id===c.id);return{fx0:a.fx,fy0:a.fy,fx1:b.fx,fy1:b.fy};});
+    drawPlan(svgO, room, obs, {highlight:hl, arrows});
+    extra.innerHTML=`<div class="diff-head"><b>${changes.length} layout changes</b> between the planned setup and how the room actually ended up</div>`+
+      `<div class="diff-list">`+changes.map(c=>`<span class="diff-chip"><b>${c.label}</b> ${c.note}</span>`).join('')+`</div>`;
+  } else if(state.status==='next'||state.status==='ready'){
+    stage.className='plan-stage';
+    const svg=newSvg(); stage.appendChild(svg);
+    const sg=SUGGEST[state.proc]; let opts={};
+    if(sg && !state.applied){ const it=planned.find(x=>x.kind===sg.kind);
+      if(it){const p=driftTo(it,sg,room); opts={ghosts:[{kind:sg.kind,fx:p.fx,fy:p.fy}], arrows:[{fx0:it.fx,fy0:it.fy,fx1:p.fx,fy1:p.fy}]};} }
+    drawPlan(svg, room, planned, opts);
+    if(sg){ extra.innerHTML = state.applied
+      ? `<div class="suggest-banner applied"><span class="sg-ic">✓</span><div class="sg-tx"><b>Suggestion applied.</b> Layout updated from prior observed cases.</div><button class="sg-btn ghost" id="sgUndo">Undo</button></div>`
+      : `<div class="suggest-banner"><span class="sg-ic">✦</span><div class="sg-tx"><b>NOLO suggests:</b> ${sg.text}. <span class="sg-conf">${sg.conf} drifted there.</span></div><button class="sg-btn" id="sgApply">Apply</button></div>`;
+      const ap=document.getElementById('sgApply'); if(ap) ap.onclick=()=>{state.applied=true;render();};
+      const un=document.getElementById('sgUndo'); if(un) un.onclick=()=>{state.applied=false;render();}; }
+  } else {
+    stage.className='plan-stage';
+    const svg=newSvg(); stage.appendChild(svg);
+    drawPlan(svg, room, planned, {});
+    extra.innerHTML=`<div class="plan-note"><b>Shaded</b> = sterile field · <b>arc</b> = door swing · 1 m grid. Equipment is drawn to scale — clearances reflect the room, procedure, surgeon preference &amp; patient.</div>`;
+  }
 }
 
 function renderPosition(P,facs){
