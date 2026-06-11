@@ -108,7 +108,7 @@
   .viewport{position:relative;min-height:0;overflow:hidden;background:var(--bg)}
   .view{height:100%;min-height:0;overflow:hidden}
   .view-schedule{display:none;grid-template-columns:332px 1fr}
-  .view-case{display:none;grid-template-rows:auto 1fr}
+  .view-case{display:none;grid-template-rows:auto 1fr auto}
   body.v-schedule .view-schedule{display:grid;animation:fade .25s ease}
   body.v-case .view-case{display:grid;animation:fade .25s ease}
   @keyframes fade{from{opacity:0}to{opacity:1}}
@@ -186,12 +186,29 @@
   .case-head .spacer{flex:1}
   .sync{font-size:11.5px;color:var(--faint)}
 
-  .case-main{display:grid;grid-template-columns:var(--inp) 1fr var(--pick);gap:12px;padding:12px;min-height:0;overflow:hidden}
-  .case-main.lc:not(.rc){grid-template-columns:1fr var(--pick)}
-  .case-main.rc:not(.lc){grid-template-columns:var(--inp) 1fr}
-  .case-main.lc.rc{grid-template-columns:1fr}
-  .case-main.lc .col.left{display:none}
+  .case-main{display:grid;grid-template-columns:1fr var(--pick);gap:12px;padding:12px;min-height:0;overflow:hidden}
+  .case-main.rc{grid-template-columns:1fr}
   .case-main.rc .col.right{display:none}
+
+  /* bottom case + patient bar */
+  .case-bottom{display:flex;align-items:center;gap:18px;padding:7px 18px;background:var(--card);border-top:1px solid var(--line)}
+  .cb-section{display:flex;align-items:center;gap:14px}
+  .cb-label{font-size:10px;text-transform:uppercase;letter-spacing:.09em;color:var(--faint);font-weight:700}
+  .cb-val{font-size:13px;font-weight:600;color:var(--ink)}
+  .cb-val.cb-muted{font-weight:500;color:var(--muted)}
+  .cb-dot{color:var(--faint)}
+  .cb-patient{gap:18px}
+  .cb-alertsec{margin-left:auto;gap:10px}
+  .cb-alerts{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+  .cb-alert{display:flex;align-items:center;gap:5px;font-size:11.5px;font-weight:600;padding:5px 11px;border-radius:999px;background:#fff3e0;color:#a85a00;border:1px solid #ffd9a3}
+  .cb-alert svg{width:12px;height:12px;flex:none}
+  .cb-noalert{font-size:12px;color:#1e8e4e;font-weight:600}
+  .cb-id{display:flex;flex-direction:column;line-height:1.2;margin-right:2px}
+  .cb-id b{font-size:13.5px}
+  .cb-id span{font-size:10.5px;color:var(--faint);font-variant-numeric:tabular-nums}
+  .cb-stat{display:flex;flex-direction:column;line-height:1.2}
+  .cb-stat .sl{font-size:10px;color:var(--faint)}
+  .cb-stat .sv{font-size:14px;font-weight:600;font-variant-numeric:tabular-nums}
   .col{display:flex;flex-direction:column;gap:9px;min-height:0;overflow:hidden}
 
   .card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow)}
@@ -249,7 +266,7 @@
   .card h4{margin:0 0 9px;font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);font-weight:700}
   .posname{font-size:15px;font-weight:600;color:var(--accent);line-height:1.3}
   .equip{list-style:none;margin:10px 0 0;padding:0}
-  .equip li{font-size:12.5px;padding:4px 0;display:flex;gap:8px;align-items:center;color:var(--ink)}
+  .equip li{font-size:12.5px;padding:3px 0;display:flex;gap:8px;align-items:center;color:var(--ink)}
   .equip li .bx{width:15px;height:15px;border:1.5px solid var(--good);border-radius:5px;flex:none;display:grid;place-items:center;color:var(--good);font-size:10px}
   .equip li.added .bx{border-color:var(--added);color:var(--added)}
   .equip li.added{color:#a85a00}
@@ -394,9 +411,6 @@
         <!-- ===================== CASE VIEW ===================== -->
         <section class="view view-case" id="viewCase">
           <header class="case-head">
-            <button class="iconbtn" id="leftToggle" title="Hide inputs panel">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="14" rx="2.5"/><rect x="5.3" y="6.8" width="3.2" height="10.4" rx="1" fill="currentColor" stroke="none"/></svg>
-            </button>
             <button class="crumb" id="backSched">
               <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>
               Today's schedule
@@ -416,40 +430,7 @@
           </header>
 
           <div class="case-main rc" id="caseMain">
-            <!-- LEFT: inputs -->
-            <aside class="col left">
-              <div class="card pad">
-                <h3 class="sec">Case</h3>
-                <div class="field"><label>Procedure</label><div class="seg" id="procSeg"></div></div>
-                <div class="field"><label>Surgeon</label><div class="seg" id="surgSeg"></div></div>
-              </div>
-              <div class="card pad">
-                <h3 class="sec">Patient</h3>
-                <div class="pt-head"><b id="ptName">—</b><span id="ptMrn">—</span></div>
-                <div class="pt-grid">
-                  <div class="stat"><span class="sl">Age</span><span class="sv" id="ptAge">—</span></div>
-                  <div class="stat"><span class="sl">Height</span><span class="sv" id="ptHt">—</span></div>
-                  <div class="stat"><span class="sl">Weight</span><span class="sv" id="ptWt">—</span></div>
-                  <div class="stat"><span class="sl">BMI</span><span class="sv" id="ptBmi">—</span></div>
-                </div>
-                <div class="pt-note">Height/weight drive <b>table ergonomics</b> &amp; <b>transfer-staff</b> needs — not cosmetic.</div>
-              </div>
-              <div class="card pad">
-                <h3 class="sec">Patient factors</h3>
-                <div class="chips" id="chips"></div>
-              </div>
-              <div class="card pad">
-                <h3 class="sec">Quick presets</h3>
-                <div class="scriptbar">
-                  <button data-demo="reset">↺ Reset</button>
-                  <button data-demo="risky">Risky patient</button>
-                  <button data-demo="big">Large patient</button>
-                </div>
-                <div class="foot">Synced overnight with the day's OR list — no PHI breach.</div>
-              </div>
-            </aside>
-
-            <!-- CENTER: floor plan + position + crew -->
+            <!-- CENTER: floor plan -->
             <section class="col center">
               <div class="card plancard">
                 <div class="legend" id="legend"></div>
@@ -476,6 +457,27 @@
                 </div>
               </div>
             </aside>
+          </div>
+
+          <div class="case-bottom">
+            <div class="cb-section">
+              <span class="cb-label">Case</span>
+              <span class="cb-val" id="cbProc">—</span>
+              <span class="cb-dot">·</span>
+              <span class="cb-val cb-muted" id="cbSurg">—</span>
+            </div>
+            <div class="cb-section cb-patient">
+              <span class="cb-label">Patient</span>
+              <div class="cb-id"><b id="ptName">—</b><span id="ptMrn">—</span></div>
+              <div class="cb-stat"><span class="sl">Age</span><span class="sv" id="ptAge">—</span></div>
+              <div class="cb-stat"><span class="sl">Height</span><span class="sv" id="ptHt">—</span></div>
+              <div class="cb-stat"><span class="sl">Weight</span><span class="sv" id="ptWt">—</span></div>
+              <div class="cb-stat"><span class="sl">BMI</span><span class="sv" id="ptBmi">—</span></div>
+            </div>
+            <div class="cb-section cb-alertsec">
+              <span class="cb-label">Alerts</span>
+              <div class="cb-alerts" id="cbAlerts"></div>
+            </div>
           </div>
         </section>
 
@@ -662,39 +664,13 @@ const state = {
 function iconSvg(inner, color, px){return `<svg class="gicon" viewBox="0 0 24 24" width="${px}" height="${px}" style="color:${color}" fill="${color}">${inner}</svg>`;}
 function activeFactors(){return [...state.factors].map(k=>({k,...FACTORS[k]}));}
 
-/* ---------------- segmented controls ---------------- */
-const procSeg=document.getElementById('procSeg'), surgSeg=document.getElementById('surgSeg');
-function buildSeg(host, options, onPick){
-  host.innerHTML='';
-  options.forEach(o=>{
-    const b=document.createElement('button');
-    b.textContent=o.label; b.dataset.val=o.val;
-    b.onclick=()=>onPick(o.val);
-    host.appendChild(b);
-  });
+/* ---------------- patient-factor alerts ---------------- */
+const WARN_ICON='<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.8 22.6 21.2H1.4z"/><path d="M11 9.4h2v6h-2zM11 16.7h2v2h-2z" fill="#fff3e0"/></svg>';
+function renderAlerts(facs){
+  const host=document.getElementById('cbAlerts');
+  if(!facs.length){host.innerHTML='<span class="cb-noalert">✓ None</span>';return;}
+  host.innerHTML=facs.map(f=>`<span class="cb-alert">${WARN_ICON}<span>${f.label}</span></span>`).join('');
 }
-function syncSeg(host,val){[...host.children].forEach(c=>c.classList.toggle('on',c.dataset.val===val));}
-buildSeg(procSeg, Object.keys(PROCEDURES).map(k=>({val:k,label:PROCEDURES[k].short})), v=>{state.proc=v;state.video=false;render();});
-buildSeg(surgSeg, Object.keys(SURGEONS).map(k=>({val:k,label:SURGEONS[k].short})), v=>{state.surg=v;render();});
-
-/* ---------------- chips ---------------- */
-const chipsEl=document.getElementById('chips');
-for(const k in FACTORS){
-  const c=document.createElement('div');c.className='chip';c.textContent=FACTORS[k].label;c.dataset.k=k;
-  c.onclick=()=>{state.factors.has(k)?state.factors.delete(k):state.factors.add(k);render();};
-  chipsEl.appendChild(c);
-}
-
-document.querySelectorAll('.scriptbar button').forEach(b=>b.onclick=()=>{
-  const d=b.dataset.demo;
-  if(d==='reset'){state.proc='lap_chole';state.surg='drA';state.factors=new Set();state.video=false;
-    state.patient={name:'Doe, Jane',mrn:'MRN 04412857',age:'58 y',ht:'168 cm',wt:'72 kg',bmi:25.5};}
-  if(d==='risky'){state.proc='lap_chole';state.surg='drB';state.factors=new Set(['anticoag','adhesions']);state.video=false;
-    state.patient={name:'Park, Daniel',mrn:'MRN 07731204',age:'64 y',ht:'176 cm',wt:'94 kg',bmi:30.3};}
-  if(d==='big'){state.proc='lap_chole';state.surg='drA';state.factors=new Set(['bigbmi','airway']);state.video=false;
-    state.patient={name:'Nguyen, Mai',mrn:'MRN 05519983',age:'47 y',ht:'160 cm',wt:'126 kg',bmi:41};}
-  render();
-});
 
 /* ---------------- navigation ---------------- */
 function showView(v){
@@ -716,14 +692,9 @@ navToggle.onclick=()=>{
 };
 document.getElementById('backSched').onclick=()=>showView('schedule');
 
-/* collapse side panes (independent) */
+/* collapse pick-list pane */
 const caseMain=document.getElementById('caseMain');
-const leftToggle=document.getElementById('leftToggle'), rightToggle=document.getElementById('rightToggle');
-leftToggle.onclick=()=>{
-  const collapsed=caseMain.classList.toggle('lc');
-  leftToggle.classList.toggle('active',collapsed);
-  leftToggle.title=collapsed?'Show inputs panel':'Hide inputs panel';
-};
+const rightToggle=document.getElementById('rightToggle');
 rightToggle.onclick=()=>{
   const collapsed=caseMain.classList.toggle('rc');
   rightToggle.classList.toggle('active',collapsed);
@@ -808,9 +779,6 @@ function openCase(orIdx, caseIdx){
 
 /* ---------------- case render ---------------- */
 function render(){
-  syncSeg(procSeg,state.proc); syncSeg(surgSeg,state.surg);
-  document.querySelectorAll('.chip').forEach(c=>c.classList.toggle('on',state.factors.has(c.dataset.k)));
-
   const P=PROCEDURES[state.proc], S=SURGEONS[state.surg], facs=activeFactors(), pt=state.patient;
 
   let bmi=pt.bmi, wt=pt.wt;
@@ -827,6 +795,9 @@ function render(){
   document.getElementById('caseTitle').textContent=P.name;
   const extra=S.extra&&S.extra[state.proc]?' · '+S.extra[state.proc]:'';
   document.getElementById('caseSub').textContent=`${state.or} · ${S.name}${S.note?' ('+S.note+')':''}${extra}`;
+  document.getElementById('cbProc').textContent=P.name;
+  document.getElementById('cbSurg').textContent=S.name;
+  renderAlerts(facs);
   const om=state.orMeta||SCHEDULE[0];
   document.getElementById('caseOrBadge').innerHTML=`<span style="background:${om.color}1a;width:34px;height:34px;border-radius:10px;display:grid;place-items:center">${iconSvg(OR_ICON[om.icon],om.color,19)}</span>`;
 
