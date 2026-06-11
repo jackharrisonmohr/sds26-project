@@ -3,8 +3,14 @@
 ## The honest gap (state this in the pitch)
 **No public dataset labels back-table *supply consumption*** — what was opened, what went unused.
 That's PHI/proprietary. So OR-room video gives us **scene understanding** (who/what is in the room,
-tools/equipment visible, activity phase) — **not** "this sponge was used." Closing that gap = our
-prospective data-collection contribution, not a download.
+gross activity, large equipment) — **not** "this sponge was used."
+
+Crucially, **ambient room cameras cannot identify fine-grained or micro-instruments** — tools
+distinguished only by stamped sizes/catalog numbers (implants, screws, broaches), under heavy
+occlusion, at distance, with specular metal and motion blur. So **room CV is for the
+people / space / workflow axis, not for reading the pick list.** Fine-grained "what was used" comes
+from **barcode / RFID / UDI scan + tray tracking**, not vision. Closing the patient-linked
+supply-usage gap = our prospective data contribution, not a download.
 
 Also note: our provided datasets (**Cholec80 / AutoLaparo**) are the **laparoscopic in-body feed** —
 they cover intracorporeal *instruments*, not the room or the back table. OR-room datasets below are a
@@ -16,7 +22,7 @@ they cover intracorporeal *instruments*, not the room or the back table. OR-room
 |---|---|---|---|---|
 | **MVOR** (CAMMA, Strasbourg) | **Real** interventions (vertebroplasty, lung biopsy) | 3× RGB-D, 732 multiview frames; human bboxes + 2D/3D pose | **Free, direct on GitHub** | Easiest real OR-room frame to show the "room-camera modality" on a slide |
 | **4D-OR** (TUM) | **Simulated** total-knee-replacement surgeries (realistic mock OR) | 6× ceiling RGB-D @1fps, 6734 scenes; **semantic scene graphs**, 6D object poses, clinical roles | Google-form agreement; **MIT** | Scene-graph reasoning; object/instrument *presence* in the room |
-| **MM-OR** (TUM, CVPR 2025) | Extends 4D-OR; real + sim OR scenes | RGB-D + **audio + speech + robot logs + tracking**; **panoptic segmentation** (pixel-level tools/staff/equipment) + scene graphs | Google-form agreement; **Apache-2.0** | **Closest to back-table/instrument visibility** — panoptic tool/equipment seg is the substrate for supply ground-truth |
+| **MM-OR** (TUM, CVPR 2025) | Extends 4D-OR; real + sim OR scenes | RGB-D + **audio + speech + robot logs + tracking**; **panoptic segmentation** (staff/equipment/large tools) + scene graphs | Google-form agreement; **Apache-2.0** | Substrate for the **people/space/turnover** axis (staff, equipment, room state) — *not* micro-instrument identity |
 | **EgoExOR** (2025) | Ego + exo-centric OR, surgical activity understanding | Multi-view ego/exo video | Check repo (arXiv 2505.24287) | Newer; activity/workflow angle |
 | **OR-AR** | ~400 full-length videos, 85+ procedures (incl. da Vinci robot cases) | 4× time-of-flight cameras | **Proprietary / not public** | Reference only — cite as evidence the modality works at scale; we can't obtain it |
 
@@ -30,10 +36,11 @@ they cover intracorporeal *instruments*, not the room or the back table. OR-room
 - **For tomorrow's demo:** none are trainable overnight. Grab **one MVOR frame** (free, instant) to
   *show* the room-camera modality on the roadmap slide. Keep the live CV result on Cholec80
   (in-body instruments) — that's the real, finished asset.
-- **For the research-plan slide:** name **MM-OR** as the substrate for extending to back-table
-  ground truth (panoptic tool/equipment seg), with our **prospective OR-room + supply-consumption
-  collection** as the novel data contribution. Submit the **4D-OR / MM-OR Google forms now** if you
-  want the assets in hand (terms agreement is instant; it's not a long review).
+- **For the research-plan slide:** name **MM-OR** as the substrate for the **people/space/turnover**
+  axis (staff, equipment, room state). Materials ground truth = **barcode/RFID/UDI scan + tray
+  tracking**, *not* room CV. Our novel data contribution = a **prospective collection linking
+  scan/UDI/tray/count data to patient records** (plus OR-room video for the workflow axis). Submit the
+  **4D-OR / MM-OR Google forms now** if you want the room-video assets in hand (agreement is instant).
 
 ## Links
 - MVOR — https://github.com/CAMMA-public/MVOR · CAMMA datasets: https://camma.unistra.fr/datasets/
