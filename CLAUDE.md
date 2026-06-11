@@ -1,6 +1,13 @@
 i'm at 2026 surgical data science summer school (see https://www.edu4sds.org/). 
 We are doing a group project. It's a 6 person group, half CS, half clinical. 
-We present our demo + 'research pitch' on Friday.  It's currently tuesday evening.
+We present our demo + 'research pitch' on Friday.  It's currently Thursday evening.
+
+We decided on the idea in concept_v0.md. Please rad that. 
+
+
+
+
+----
 
 Instructions we got were: 
 'Dear group project 3 participants,

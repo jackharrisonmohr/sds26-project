@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>NOLO — Patient-Specific OR Setup</title>
+<style>
+  :root{
+    --bg:#0f1623; --panel:#16202f; --panel2:#1c2839; --line:#27374d;
+    --ink:#e8eef7; --muted:#93a4bd; --faint:#64758f;
+    --accent:#4da3ff; --good:#3ecf8e; --warn:#ffb454; --bad:#ff6b6b;
+    --surgeon:#3b82f6; --assist:#60a5fa; --scrub:#34d399; --anaes:#a78bfa;
+    --circ:#fb923c; --image:#22d3ee; --robot:#94a3b8; --added:#ffd36b;
+    --radius:14px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{
+    background:radial-gradient(1200px 800px at 80% -10%, #1b2740 0%, var(--bg) 55%) fixed;
+    color:var(--ink);
+    font:14px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .app{display:grid;grid-template-rows:auto 1fr;height:100vh}
+  /* ---- top bar ---- */
+  header.bar{
+    display:flex;align-items:center;gap:18px;padding:12px 20px;
+    border-bottom:1px solid var(--line);background:rgba(13,20,32,.7);backdrop-filter:blur(6px);
+  }
+  .logo{display:flex;align-items:baseline;gap:10px}
+  .logo b{font-size:20px;letter-spacing:.5px}
+  .logo .tag{color:var(--muted);font-size:12px}
+  .logo .dot{width:9px;height:9px;border-radius:50%;background:var(--good);box-shadow:0 0 10px var(--good);display:inline-block;margin-right:4px}
+  .bar .spacer{flex:1}
+  .bar .selctl{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:12px}
+  select,button{font:inherit;color:var(--ink)}
+  select{background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:7px 10px}
+  .sync{font-size:11px;color:var(--faint)}
+  /* ---- layout ---- */
+  .main{display:grid;grid-template-columns:300px 1fr 340px;gap:0;min-height:0}
+  .rail{border-right:1px solid var(--line);overflow:auto;padding:16px}
+  .rail.right{border-right:none;border-left:1px solid var(--line)}
+  .canvas{overflow:auto;padding:18px 20px}
+  h3.sec{font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:var(--faint);margin:18px 0 8px}
+  h3.sec:first-child{margin-top:0}
+  /* ---- inputs ---- */
+  .field{margin-bottom:10px}
+  .field label{display:block;font-size:11px;color:var(--muted);margin-bottom:4px}
+  .field select{width:100%}
+  .chips{display:flex;flex-wrap:wrap;gap:7px}
+  .chip{
+    cursor:pointer;user-select:none;border:1px solid var(--line);background:var(--panel2);
+    color:var(--muted);padding:6px 10px;border-radius:999px;font-size:12px;transition:.12s;
+  }
+  .chip:hover{border-color:#3a4f6e}
+  .chip.on{background:rgba(255,180,84,.14);border-color:var(--warn);color:#ffd9a3}
+  .pt-card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px}
+  .pt-row{display:flex;justify-content:space-between;font-size:12px;padding:3px 0}
+  .pt-row .k{color:var(--faint)}
+  .pt-row .v{color:var(--ink);font-variant-numeric:tabular-nums}
+  .pt-note{font-size:11px;color:var(--faint);margin-top:8px;border-top:1px dashed var(--line);padding-top:8px;line-height:1.4}
+  .vbtn{width:100%;margin-top:8px;cursor:pointer;border:1px solid var(--image);background:rgba(34,211,238,.12);
+    color:#bff3fb;border-radius:10px;padding:9px;font-size:12.5px;transition:.12s}
+  .vbtn:hover{background:rgba(34,211,238,.2)}
+  .vbtn.on{background:rgba(34,211,238,.25)}
+  /* ---- floor plan ---- */
+  .canvas h2{margin:0 0 2px;font-size:18px}
+  .canvas .sub{color:var(--muted);font-size:12.5px;margin-bottom:14px}
+  .planwrap{position:relative;background:linear-gradient(180deg,#101a2a,#0d1522);border:1px solid var(--line);
+    border-radius:var(--radius);padding:14px}
+  .legend{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+  .lg{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted);
+    border:1px solid var(--line);border-radius:999px;padding:3px 9px;cursor:pointer;user-select:none}
+  .lg .sw{width:10px;height:10px;border-radius:3px}
+  .lg.off{opacity:.32;text-decoration:line-through}
+  svg.plan{width:100%;height:auto;display:block;border-radius:10px;background:
+    repeating-linear-gradient(0deg,transparent 0 38px,rgba(255,255,255,.025) 38px 39px),
+    repeating-linear-gradient(90deg,transparent 0 38px,rgba(255,255,255,.025) 38px 39px),#0b1320}
+  .station rect,.station circle{stroke:rgba(0,0,0,.35);stroke-width:1}
+  .station text{fill:#06101d;font-weight:600;font-size:8.5px}
+  .station .role{fill:#dbe7f7;font-size:7px;font-weight:500}
+  .added-pulse{animation:pulse 1.4s ease-in-out 6}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.45}}
+  .plan-note{font-size:11px;color:var(--faint);margin-top:8px}
+  /* ---- position card ---- */
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:13px}
+  .card h4{margin:0 0 8px;font-size:12px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted)}
+  .posname{font-size:16px;font-weight:600;color:#cfe3ff}
+  .equip{list-style:none;margin:10px 0 0;padding:0}
+  .equip li{font-size:12.5px;padding:4px 0;display:flex;gap:8px;align-items:center;color:var(--ink)}
+  .equip li .bx{width:14px;height:14px;border:1.5px solid var(--good);border-radius:4px;flex:none;
+    display:grid;place-items:center;color:var(--good);font-size:10px}
+  .equip li.added .bx{border-color:var(--added);color:var(--added)}
+  .equip li.added{color:#ffe6ad}
+  .crew{list-style:none;margin:0;padding:0}
+  .crew li{font-size:12.5px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.04);display:flex;gap:8px}
+  .crew li .rl{width:9px;height:9px;border-radius:3px;margin-top:4px;flex:none}
+  .crew li.added{color:#ffe6ad}
+  .crew .tk{color:var(--muted);font-size:11.5px}
+  /* ---- right rail: materials + usage ---- */
+  .mgroup{margin-bottom:14px}
+  .mgroup .gh{font-size:11px;color:var(--faint);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px}
+  .item{display:flex;gap:9px;align-items:flex-start;padding:6px 8px;border-radius:9px;margin-bottom:4px;
+    background:var(--panel);border:1px solid transparent}
+  .item .ic{flex:none;width:18px;height:18px;border-radius:5px;display:grid;place-items:center;font-size:11px;margin-top:1px}
+  .item .nm{font-size:12.5px}
+  .item .wy{font-size:11px;color:var(--faint);margin-top:1px}
+  .item.pruned{opacity:.6}
+  .item.pruned .nm{text-decoration:line-through;color:var(--muted)}
+  .item.pruned .ic{background:rgba(255,107,107,.15);color:var(--bad)}
+  .item.added{border-color:rgba(255,211,107,.4);background:rgba(255,211,107,.07)}
+  .item.added .ic{background:rgba(255,211,107,.2);color:var(--added)}
+  .item.std .ic{background:rgba(62,207,142,.15);color:var(--good)}
+  .item.sub .ic{background:rgba(167,139,250,.18);color:#c4b5fd}
+  .item.safety{border-color:rgba(255,107,107,.4);background:rgba(255,107,107,.06)}
+  .item.safety .ic{background:rgba(255,107,107,.18);color:var(--bad)}
+  /* usage bars */
+  .usage{margin-top:6px}
+  .ubar{display:grid;grid-template-columns:74px 1fr 34px;align-items:center;gap:8px;margin:5px 0;font-size:11.5px}
+  .ubar .tr{height:9px;border-radius:6px;background:#1f2c40;overflow:hidden}
+  .ubar .fl{height:100%;border-radius:6px;background:linear-gradient(90deg,#22d3ee,#3b82f6)}
+  .ubar.low .fl{background:linear-gradient(90deg,#ff6b6b,#ff9a6b)}
+  .ubar .pc{text-align:right;color:var(--muted);font-variant-numeric:tabular-nums}
+  .ubar.low .nm{color:#ffb4b4}
+  .uflag{font-size:11px;color:var(--bad);margin-top:6px}
+  .empty{font-size:12px;color:var(--faint);font-style:italic;padding:10px;text-align:center}
+  .pill{font-size:10px;padding:1px 7px;border-radius:999px;border:1px solid var(--line);color:var(--muted)}
+  .foot{font-size:10.5px;color:var(--faint);margin-top:14px;line-height:1.5;border-top:1px solid var(--line);padding-top:10px}
+  .kbd{font-family:ui-monospace,monospace;background:#0c1422;border:1px solid var(--line);border-radius:4px;padding:0 4px;font-size:11px}
+  .scriptbar{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+  .scriptbar button{cursor:pointer;background:var(--panel2);border:1px solid var(--line);border-radius:8px;
+    padding:6px 10px;font-size:11.5px;color:var(--muted)}
+  .scriptbar button:hover{border-color:var(--accent);color:var(--ink)}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="bar">
+    <div class="logo">
+      <b>NOLO</b><span class="tag">No One Left Out · Patient-Specific OR Setup</span>
+    </div>
+    <div class="spacer"></div>
+    <div class="selctl">
+      <span>OR</span>
+      <select id="orSel">
+        <option value="OR 4">OR 4</option><option value="OR 2">OR 2</option><option value="OR 7">OR 7</option>
+      </select>
+    </div>
+    <div class="sync">⟳ synced 06:14 · today's list</div>
+  </header>
+
+  <div class="main">
+    <!-- LEFT: inputs -->
+    <aside class="rail">
+      <h3 class="sec">Case</h3>
+      <div class="field">
+        <label>Procedure</label>
+        <select id="procSel"></select>
+      </div>
+      <div class="field">
+        <label>Surgeon</label>
+        <select id="surgSel"></select>
+      </div>
+
+      <h3 class="sec">Patient</h3>
+      <div class="pt-card">
+        <div class="pt-row"><span class="k">Name</span><span class="v">Doe, Jane</span></div>
+        <div class="pt-row"><span class="k">File #</span><span class="v">MRN 04412857</span></div>
+        <div class="pt-row"><span class="k">Age</span><span class="v" id="ptAge">— </span></div>
+        <div class="pt-row"><span class="k">Height</span><span class="v" id="ptHt">—</span></div>
+        <div class="pt-row"><span class="k">Weight</span><span class="v" id="ptWt">—</span></div>
+        <div class="pt-row"><span class="k">BMI</span><span class="v" id="ptBmi">—</span></div>
+        <div class="pt-note">Height/weight justify <b>table ergonomics</b> &amp; whether <b>extra transfer staff</b> are needed — not cosmetic.</div>
+      </div>
+
+      <h3 class="sec">Patient factors</h3>
+      <div class="chips" id="chips"></div>
+
+      <h3 class="sec">Ground truth</h3>
+      <button class="vbtn" id="videoBtn">▶ Apply video-mined instrument usage</button>
+      <div class="foot">
+        Cholec80/AutoLaparo = the <b>in-body laparoscopic feed</b> → corrects the <b>instrument</b> set
+        from what actually entered the field. Back-table supply ground-truth needs OR-room cameras (roadmap).
+      </div>
+
+      <div class="scriptbar">
+        <button data-demo="reset">↺ Reset</button>
+        <button data-demo="risky">Load risky patient</button>
+        <button data-demo="big">Load large patient</button>
+      </div>
+    </aside>
+
+    <!-- CENTER: floor plan + position + crew -->
+    <section class="canvas">
+      <h2 id="caseTitle">—</h2>
+      <div class="sub" id="caseSub">—</div>
+
+      <div class="planwrap">
+        <div class="legend" id="legend"></div>
+        <svg class="plan" id="plan" viewBox="0 0 200 150" preserveAspectRatio="xMidYMid meet"></svg>
+        <div class="plan-note">Floor plan is a <b>per-team template</b> your surgeons curate — toggle role layers above. Tables/positions reflow with procedure, surgeon preference &amp; patient.</div>
+      </div>
+
+      <div class="grid2">
+        <div class="card">
+          <h4>Patient position</h4>
+          <div class="posname" id="posName">—</div>
+          <ul class="equip" id="equip"></ul>
+        </div>
+        <div class="card">
+          <h4>Team &amp; turnover — no one left out</h4>
+          <ul class="crew" id="crew"></ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- RIGHT: materials + usage -->
+    <aside class="rail right">
+      <h3 class="sec">Pick list <span class="pill" id="countPill"></span></h3>
+      <div id="materials"></div>
+
+      <h3 class="sec">Video-mined usage <span class="pill">Cholec80</span></h3>
+      <div id="usage" class="usage"><div class="empty">Run “Apply video-mined usage” to correct the instrument set.</div></div>
+
+      <div class="foot">
+        <b>Legend</b> &nbsp;<span style="color:var(--good)">✓</span> standard ·
+        <span style="color:var(--added)">＋</span> added for this patient ·
+        <span style="color:var(--bad)">－</span> pruned (unused) ·
+        <span style="color:#c4b5fd">↔</span> substituted ·
+        <span style="color:var(--bad)">⚠</span> safety-staged
+      </div>
+    </aside>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   NOLO demo — data model. Clinical content is intentionally
+   curated/illustrative: surgeons own these templates & rules.
+   ============================================================ */
+const ROLES = {
+  surgeon:{label:'Surgeon', color:'#3b82f6'},
+  assist :{label:'Assistant', color:'#60a5fa'},
+  scrub  :{label:'Scrub nurse + back table', color:'#34d399'},
+  anaes  :{label:'Anesthesia', color:'#a78bfa'},
+  circ   :{label:'Circulating / turnover', color:'#fb923c'},
+  image  :{label:'Imaging (C-arm)', color:'#22d3ee'},
+  robot  :{label:'Equipment / tower', color:'#94a3b8'},
+};
+
+/* station coords are in the 200x150 viewBox. Patient table drawn separately. */
+const PROCEDURES = {
+  lap_chole:{
+    name:'Laparoscopic Cholecystectomy',
+    age:'58 y', ht:`168 cm`, wt:'72 kg', bmi:25.5,
+    position:{name:'Supine · reverse Trendelenburg, left tilt', equip:['Arm boards (both arms out)','Foot board + safety strap','Sequential compression devices']},
+    table:{cx:100,cy:78,w:34,h:78,rot:0, patient:'supine'},
+    stations:[
+      {role:'anaes', x:100, y:20, label:'Anaes'},
+      {role:'surgeon', x:60, y:62, label:'Surgeon'},
+      {role:'assist', x:60, y:98, label:'Cam/Asst'},
+      {role:'scrub', x:150, y:110, label:'Scrub'},
+      {role:'robot', x:150, y:42, label:'Tower'},
+      {role:'circ', x:178, y:76, label:'Circ'},
+    ],
+    scrubSlots:{R:{x:150,y:110}, L:{x:42,y:128}},
+    instruments:[
+      {nm:'Maryland dissector'},{nm:'Hook electrocautery'},{nm:'Clip applier (Hem-o-lok)'},
+      {nm:'Laparoscopic scissors'},{nm:'Bipolar forceps'},{nm:'Grasper x2'},
+      {nm:'Specimen retrieval bag'},{nm:'Suction-irrigator'},
+    ],
+    supplies:[
+      {nm:'5mm/10mm trocars x4'},{nm:'Veress needle'},{nm:'CO₂ tubing'},
+      {nm:'Skin closure strips'},{nm:'4-0 Monocryl'},{nm:'Laparotomy sponges x10'},
+    ],
+    /* video usage = % of cases each instrument actually appears on-field */
+    videoUsage:{'Grasper x2':99,'Hook electrocautery':97,'Specimen retrieval bag':92,
+      'Clip applier (Hem-o-lok)':91,'Suction-irrigator':63,'Maryland dissector':58,
+      'Laparoscopic scissors':34,'Bipolar forceps':19},
+    crew:[
+      {role:'circ', who:'Circulating nurse', task:'Room turnover, positioning, counts'},
+      {role:'scrub', who:'Scrub nurse', task:'Back table + instrument flow (right of patient)'},
+      {role:'anaes', who:'Anesthetist', task:'Induction, airway, lines'},
+      {role:'circ', who:'Anaesthetic tech', task:'Assists induction / turnover'},
+    ],
+  },
+  tha:{
+    name:'Total Hip Arthroplasty (posterior)',
+    age:'71 y', ht:'175 cm', wt:'88 kg', bmi:28.7,
+    position:{name:'Lateral decubitus (operative side up)', equip:['Bean-bag positioner','Hip positioning posts (ant + post)','Axillary roll','Arm support / sled','Pillow between legs']},
+    table:{cx:100,cy:78,w:78,h:30,rot:0, patient:'lateral'},
+    stations:[
+      {role:'anaes', x:26, y:76, label:'Anaes'},
+      {role:'surgeon', x:100, y:120, label:'Surgeon'},
+      {role:'assist', x:100, y:36, label:'Asst'},
+      {role:'scrub', x:150, y:118, label:'Scrub'},
+      {role:'robot', x:162, y:40, label:'Implants'},
+      {role:'circ', x:178, y:78, label:'Circ'},
+    ],
+    scrubSlots:{R:{x:150,y:118}, L:{x:40,y:118}},
+    instruments:[
+      {nm:'Hohmann retractors x3'},{nm:'Bone hooks'},{nm:'Acetabular reamers (set)'},
+      {nm:'Broach handle + broaches'},{nm:'Cup impactor'},{nm:'Femoral head trials'},
+      {nm:'Cobb elevator'},{nm:'Oscillating saw'},
+    ],
+    supplies:[
+      {nm:'Pulse lavage'},{nm:'Trial liners + heads'},{nm:'Bulb syringe'},
+      {nm:'Vicryl 1 / 2-0'},{nm:'Skin stapler'},{nm:'Hip drape pack'},
+    ],
+    videoUsage:null, // in-body video model trained on lap procedures only
+    crew:[
+      {role:'circ', who:'Circulating nurse', task:'Turnover, positioning, implant tracking'},
+      {role:'scrub', who:'Scrub nurse', task:'Implant trays + instrument flow'},
+      {role:'anaes', who:'Anaesthetist', task:'Spinal/GA, blood available'},
+      {role:'circ', who:'Implant rep', task:'Confirms cup/stem sizes pre-incision'},
+    ],
+  },
+};
+
+const SURGEONS = {
+  drA:{name:'Dr. A. Okafor', scrubSide:'R', extra:{lap_chole:'Likes 30° scope ready', tha:'Cementless preference — confirm trial heads'}},
+  drB:{name:'Dr. B. Lindqvist', scrubSide:'L', note:'mirrors scrub table to LEFT', extra:{lap_chole:'Routine intra-op cholangiogram → C-arm on standby', tha:'Wants cell-saver on standby'}},
+};
+
+/* patient factors: each can add safety items, substitute, change position/equip, add crew, annotate plan */
+const FACTORS = {
+  latex:{label:'Latex allergy',
+    substitute:[{from:'Latex gloves / drapes', to:'Latex-free gloves + drapes', why:'Allergy — avoid anaphylaxis (Cerner-style swap = table stakes)'}],
+    flagSupply:true},
+  anticoag:{label:'On anticoagulant',
+    add:[{group:'Safety-staged', nm:'Hemostatics pre-staged (Floseal/Surgicel)', why:'Anticoagulated → bleeding risk'},
+         {group:'Safety-staged', nm:'Type & cross — 2 units available', why:'Anticoagulated → transfusion readiness'}]},
+  adhesions:{label:'Prior surgery / adhesions',
+    add:[{group:'Safety-staged', nm:'Open conversion tray staged', why:'Adhesions → conversion-to-open risk'},
+         {group:'Instruments', nm:'Extra retractors + longer instruments', why:'Adhesions → difficult exposure'}],
+    plan:'open-tray'},
+  airway:{label:'Difficult airway',
+    add:[{group:'Safety-staged', nm:'Video laryngoscope + difficult-airway cart', why:'Anticipated difficult airway'}],
+    crew:[{role:'anaes', who:'2nd anaesthetist', task:'Standby for difficult airway', tag:'+Anaes'}]},
+  bigbmi:{label:'High BMI (41)',
+    setBmi:41, setWt:'126 kg',
+    add:[{group:'Supplies', nm:'Bariatric/long trocars + extra-long instruments', why:'BMI 41 → standard length inadequate'}],
+    equip:['Bariatric OR table (rated >250kg)','Extra padding / pressure care'],
+    crew:[{role:'circ', who:'+2 transfer team', task:'Safe bed→table transfer (BMI 41)', tag:'+Transfer'}],
+    plan:'transfer'},
+};
+
+/* ---------------- state ---------------- */
+const state = { proc:'lap_chole', surg:'drA', factors:new Set(), video:false, layers:new Set(Object.keys(ROLES)) };
+
+/* ---------------- init controls ---------------- */
+const procSel=document.getElementById('procSel'), surgSel=document.getElementById('surgSel');
+for(const k in PROCEDURES){procSel.add(new Option(PROCEDURES[k].name,k));}
+for(const k in SURGEONS){surgSel.add(new Option(SURGEONS[k].name,k));}
+procSel.onchange=e=>{state.proc=e.target.value;state.video=false;render();};
+surgSel.onchange=e=>{state.surg=e.target.value;render();};
+
+const chipsEl=document.getElementById('chips');
+for(const k in FACTORS){
+  const c=document.createElement('div');c.className='chip';c.textContent=FACTORS[k].label;c.dataset.k=k;
+  c.onclick=()=>{state.factors.has(k)?state.factors.delete(k):state.factors.add(k);render();};
+  chipsEl.appendChild(c);
+}
+document.getElementById('videoBtn').onclick=()=>{state.video=!state.video;render();};
+document.getElementById('orSel').onchange=()=>render();
+
+document.querySelectorAll('.scriptbar button').forEach(b=>b.onclick=()=>{
+  const d=b.dataset.demo;
+  if(d==='reset'){state.proc='lap_chole';state.surg='drA';state.factors=new Set();state.video=false;}
+  if(d==='risky'){state.proc='lap_chole';state.surg='drB';state.factors=new Set(['anticoag','adhesions']);state.video=true;}
+  if(d==='big'){state.proc='lap_chole';state.surg='drA';state.factors=new Set(['bigbmi','airway']);state.video=false;}
+  procSel.value=state.proc;surgSel.value=state.surg;render();
+});
+
+/* ---------------- helpers ---------------- */
+function activeFactors(){return [...state.factors].map(k=>({k,...FACTORS[k]}));}
+function planTags(){return new Set(activeFactors().map(f=>f.plan).filter(Boolean));}
+
+/* ---------------- render ---------------- */
+function render(){
+  // sync chips
+  document.querySelectorAll('.chip').forEach(c=>c.classList.toggle('on',state.factors.has(c.dataset.k)));
+  document.getElementById('videoBtn').classList.toggle('on',state.video);
+
+  const P=PROCEDURES[state.proc], S=SURGEONS[state.surg], facs=activeFactors();
+
+  // patient demographics (factors can override)
+  let bmi=P.bmi, wt=P.wt;
+  facs.forEach(f=>{if(f.setBmi){bmi=f.setBmi;} if(f.setWt){wt=f.setWt;}});
+  document.getElementById('ptAge').textContent=P.age;
+  document.getElementById('ptHt').textContent=P.ht;
+  document.getElementById('ptWt').textContent=wt;
+  const bmiEl=document.getElementById('ptBmi');
+  bmiEl.textContent=bmi+(bmi>=40?'  ⚠ high':'');
+  bmiEl.style.color=bmi>=40?'var(--warn)':'';
+
+  // titles
+  document.getElementById('caseTitle').textContent=P.name;
+  const extra=S.extra&&S.extra[state.proc]?' · '+S.extra[state.proc]:'';
+  document.getElementById('caseSub').textContent=
+    `${document.getElementById('orSel').value} · ${S.name}${S.note?' ('+S.note+')':''}${extra}`;
+
+  renderLegend();
+  renderPlan(P,S,facs);
+  renderPosition(P,facs);
+  renderCrew(P,facs);
+  renderMaterials(P,facs);
+  renderUsage(P);
+}
+
+function renderLegend(){
+  const el=document.getElementById('legend');el.innerHTML='';
+  for(const k in ROLES){
+    const on=state.layers.has(k);
+    const d=document.createElement('div');d.className='lg'+(on?'':' off');
+    d.innerHTML=`<span class="sw" style="background:${ROLES[k].color}"></span>${ROLES[k].label}`;
+    d.onclick=()=>{on?state.layers.delete(k):state.layers.add(k);render();};
+    el.appendChild(d);
+  }
+}
+
+function renderPlan(P,S,facs){
+  const svg=document.getElementById('plan');
+  const NS='http://www.w3.org/2000/svg';
+  svg.innerHTML='';
+  // room border
+  const room=document.createElementNS(NS,'rect');
+  room.setAttribute('x',6);room.setAttribute('y',6);room.setAttribute('width',188);room.setAttribute('height',138);
+  room.setAttribute('rx',8);room.setAttribute('fill','none');room.setAttribute('stroke','#27374d');room.setAttribute('stroke-dasharray','3 3');
+  svg.appendChild(room);
+
+  // OR table + patient
+  const t=P.table;
+  const tb=document.createElementNS(NS,'rect');
+  tb.setAttribute('x',t.cx-t.w/2);tb.setAttribute('y',t.cy-t.h/2);tb.setAttribute('width',t.w);tb.setAttribute('height',t.h);
+  tb.setAttribute('rx',7);tb.setAttribute('fill','#16243a');tb.setAttribute('stroke','#3a557d');
+  svg.appendChild(tb);
+  // patient silhouette (simple): head circle + body
+  const headPos = t.patient==='lateral' ? {x:t.cx-t.w/2+7,y:t.cy} : {x:t.cx,y:t.cy-t.h/2+8};
+  const hc=document.createElementNS(NS,'circle');
+  hc.setAttribute('cx',headPos.x);hc.setAttribute('cy',headPos.y);hc.setAttribute('r',5);
+  hc.setAttribute('fill','#cfe3ff');svg.appendChild(hc);
+  const plabel=document.createElementNS(NS,'text');
+  plabel.setAttribute('x',t.cx);plabel.setAttribute('y',t.cy+(t.patient==='lateral'?2:20));plabel.setAttribute('text-anchor','middle');
+  plabel.setAttribute('fill','#5b7196');plabel.setAttribute('font-size','7');plabel.textContent=t.patient==='lateral'?'patient (lateral)':'patient';
+  svg.appendChild(plabel);
+
+  // build stations
+  let stations=P.stations.map(s=>({...s}));
+  // scrub-table side is a surgeon preference → snap to a safe, non-colliding slot
+  if(P.scrubSlots){const slot=P.scrubSlots[S.scrubSide]||P.scrubSlots.R;
+    stations.forEach(s=>{if(s.role==='scrub'){s.x=slot.x;s.y=slot.y;}});}
+  // imaging on standby (Dr.B routine cholangiogram) — parked top-left, clear of others
+  if(state.surg==='drB' && state.proc==='lap_chole'){stations.push({role:'image',x:40,y:40,label:'C-arm'});}
+  // patient-driven added crew → dedicated bottom lane, spread out
+  const added=[];
+  facs.forEach(f=>(f.crew||[]).forEach(c=>added.push({role:c.role,label:c.tag||('+'+(c.who||'').split(' ')[0]),added:true})));
+  added.forEach((a,i)=>{a.x=38+i*48;a.y=136;});
+  stations=stations.concat(added);
+
+  stations.forEach(s=>{
+    if(!state.layers.has(s.role))return;
+    const label=s.label||ROLES[s.role].label;
+    const w=Math.max(30,label.length*4.9+11), h=14;          // box auto-fits the label
+    const g=document.createElementNS(NS,'g');g.setAttribute('class','station'+(s.added?' added-pulse':''));
+    const r=document.createElementNS(NS,'rect');
+    r.setAttribute('x',s.x-w/2);r.setAttribute('y',s.y-h/2);r.setAttribute('width',w);r.setAttribute('height',h);
+    r.setAttribute('rx',4);r.setAttribute('fill',ROLES[s.role].color);
+    if(s.added){r.setAttribute('stroke','#ffd36b');r.setAttribute('stroke-width','1.5');}
+    g.appendChild(r);
+    const tx=document.createElementNS(NS,'text');
+    tx.setAttribute('x',s.x);tx.setAttribute('y',s.y+2.7);tx.setAttribute('text-anchor','middle');
+    tx.setAttribute('fill','#0b1320');tx.setAttribute('font-size','7.8');tx.setAttribute('font-weight','600');
+    tx.textContent=label;g.appendChild(tx);
+    svg.appendChild(g);
+  });
+}
+
+function renderPosition(P,facs){
+  document.getElementById('posName').textContent=P.position.name;
+  const ul=document.getElementById('equip');ul.innerHTML='';
+  const base=P.position.equip.map(e=>({nm:e}));
+  const added=[];
+  facs.forEach(f=>(f.equip||[]).forEach(e=>added.push({nm:e,added:true})));
+  base.concat(added).forEach(e=>{
+    const li=document.createElement('li');if(e.added)li.className='added';
+    li.innerHTML=`<span class="bx">✓</span>${e.nm}${e.added?' <span class="pill">added</span>':''}`;
+    ul.appendChild(li);
+  });
+}
+
+function renderCrew(P,facs){
+  const ul=document.getElementById('crew');ul.innerHTML='';
+  const base=P.crew.map(c=>({...c}));
+  const added=[];
+  facs.forEach(f=>(f.crew||[]).forEach(c=>added.push({...c,added:true})));
+  base.concat(added).forEach(c=>{
+    const li=document.createElement('li');if(c.added)li.className='added';
+    li.innerHTML=`<span class="rl" style="background:${ROLES[c.role].color}"></span>
+      <div><b>${c.who}</b>${c.added?' <span class="pill">added</span>':''}<div class="tk">${c.task}</div></div>`;
+    ul.appendChild(li);
+  });
+}
+
+function renderMaterials(P,facs){
+  const host=document.getElementById('materials');host.innerHTML='';
+  const groups={Instruments:[],Supplies:[],'Safety-staged':[]};
+
+  // base
+  P.instruments.forEach(i=>groups.Instruments.push({nm:i.nm,cls:'std',ic:'✓'}));
+  P.supplies.forEach(i=>groups.Supplies.push({nm:i.nm,cls:'std',ic:'✓'}));
+
+  // video pruning (instruments only, lap procedures only)
+  if(state.video && P.videoUsage){
+    groups.Instruments.forEach(it=>{
+      const u=P.videoUsage[it.nm];
+      if(u!=null && u<40){it.cls='pruned';it.ic='－';it.why=`video: on-field in only ${u}% of cases`;}
+    });
+  }
+
+  // factor effects
+  facs.forEach(f=>{
+    (f.add||[]).forEach(a=>{
+      const g=a.group||'Safety-staged';
+      groups[g]=groups[g]||[];
+      groups[g].push({nm:a.nm,cls:g==='Safety-staged'?'safety':'added',ic:g==='Safety-staged'?'⚠':'＋',why:a.why});
+    });
+    (f.substitute||[]).forEach(s=>{
+      groups.Supplies.push({nm:`${s.to}`,cls:'sub',ic:'↔',why:`replaces ${s.from} — ${s.why}`});
+    });
+  });
+
+  let count=0;
+  for(const g of ['Instruments','Supplies','Safety-staged']){
+    const items=groups[g]||[];if(!items.length)continue;
+    const wrap=document.createElement('div');wrap.className='mgroup';
+    wrap.innerHTML=`<div class="gh">${g}</div>`;
+    items.forEach(it=>{
+      count++;
+      const d=document.createElement('div');d.className='item '+it.cls;
+      d.innerHTML=`<span class="ic">${it.ic}</span><div><div class="nm">${it.nm}</div>${it.why?`<div class="wy">${it.why}</div>`:''}</div>`;
+      wrap.appendChild(d);
+    });
+    host.appendChild(wrap);
+  }
+  document.getElementById('countPill').textContent=count+' items';
+}
+
+function renderUsage(P){
+  const host=document.getElementById('usage');
+  if(!state.video){host.innerHTML='<div class="empty">Run “Apply video-mined usage” to correct the instrument set.</div>';return;}
+  if(!P.videoUsage){host.innerHTML='<div class="empty">In-body usage model is trained on laparoscopic procedures (Cholec80/AutoLaparo). No scope feed for this open case — see roadmap.</div>';return;}
+  host.innerHTML='';
+  const entries=Object.entries(P.videoUsage).sort((a,b)=>b[1]-a[1]);
+  let pruned=[];
+  entries.forEach(([nm,pc])=>{
+    const low=pc<40;if(low)pruned.push(nm);
+    const row=document.createElement('div');row.className='ubar'+(low?' low':'');
+    row.innerHTML=`<span class="nm">${nm.split(' ')[0]}</span>
+      <span class="tr"><span class="fl" style="width:${pc}%"></span></span>
+      <span class="pc">${pc}%</span>`;
+    host.appendChild(row);
+  });
+  if(pruned.length){
+    const f=document.createElement('div');f.className='uflag';
+    f.textContent=`⚠ ${pruned.length} instrument(s) on-field <40% of cases → flagged to remove from card.`;
+    host.appendChild(f);
+  }
+}
+
+render();
+</script>
+</body>
+</html>
