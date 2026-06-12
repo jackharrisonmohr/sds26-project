@@ -99,7 +99,7 @@
     </div>
     <footer>
       <button class="btn" id="backBtn">← Back to QR</button>
-      <button class="btn" id="roleBtn">Colour by role</button>
+      <button class="btn" id="roleBtn">Icon by role</button>
       <button class="btn" id="canonBtn">Show NOLO spec</button>
       <div class="legendc" id="legendc"></div>
       <button class="btn ghost spacer" id="resetBtn2">Reset</button>
@@ -113,7 +113,6 @@
   const svg = document.querySelector('#board svg.plan');
   let subs = [], mode = 'lobby', byRole = false;
   const visible = new Set(N.ELEMENTS);
-  const ROLE_COLOR = { cs:'#3a8bff', clinical:'#34c759', other:'#9aa0ac' };
 
   const joinURL = location.origin + '/join';
   document.getElementById('url').textContent = joinURL;
@@ -135,10 +134,14 @@
 
   // ---------- helpers ----------
   function pointsFor(kind){
-    if(kind === 'table') return subs.map(s=> s.table ? { fx:s.table.fx, fy:s.table.fy, angle:s.table.angle||0, role:s.role||'other' } : null).filter(Boolean);
-    return subs.map(s=>{ const p = s.placements && s.placements[kind]; return p ? { fx:p.fx, fy:p.fy, role:s.role||'other' } : null; }).filter(Boolean);
+    if(kind === 'table') return subs.map(s=> s.table ? { fx:s.table.fx, fy:s.table.fy, angle:s.table.angle||0, role:s.role||'clinical' } : null).filter(Boolean);
+    return subs.map(s=>{ const p = s.placements && s.placements[kind]; return p ? { fx:p.fx, fy:p.fy, role:s.role||'clinical' } : null; }).filter(Boolean);
   }
-  const dotColor = (k, role)=> byRole ? (ROLE_COLOR[role]||ROLE_COLOR.other) : N.KINDS[k].color;
+  function drawRoleGlyph(add, cx, cy, role, color, S){
+    const k = S/24, inner = N.ROLE_GLYPH[role] || N.ROLE_GLYPH.clinical;
+    const g = add('g', { transform:`translate(${cx-12*k} ${cy-12*k}) scale(${k})`, fill:color, 'fill-opacity':0.92 });
+    g.innerHTML = inner;
+  }
 
   // ---------- render ----------
   function render(){
@@ -152,27 +155,26 @@
       const row = { kind, label:k.label, color:k.color, spread:st.spread, n:st.n };
       if(kind === 'table'){ const a = N.angleStats(pts.map(p=>p.angle)); row.angle = a ? a.stdDeg : 0; }
       rows.push(row);
-      if(visible.has(kind)) drawElement(ctx, kind, pts, st);
+      if(visible.has(kind)) drawElement(ctx, kind, pts);
     });
     buildLegend(rows);
   }
 
-  function drawElement(ctx, kind, pts, st){
-    const { add, FX, FY } = ctx, k = N.KINDS[kind];
-    // faint 1σ spread ellipse
-    add('ellipse', { cx:FX(st.mx), cy:FY(st.my), rx:Math.max(st.sx*N.ROOM.w*N.U,1.5), ry:Math.max(st.sy*N.ROOM.h*N.U,1.5),
-      fill:k.color, 'fill-opacity':0.05, stroke:k.color, 'stroke-opacity':0.35, 'stroke-width':0.6, 'stroke-dasharray':'3 2' });
+  // just the actual data points — no average region, no centroid
+  function drawElement(ctx, kind, pts){
+    const { add, FX, FY } = ctx, col = N.KINDS[kind].color;
     if(kind === 'table'){
-      // each table = a thin oriented stick (shows position + rotation)
       const L = 1.0*N.U;
-      pts.forEach(p=>{ const a=(p.angle||0)*Math.PI/180, hx=Math.sin(a), hy=-Math.cos(a), cx=FX(p.fx), cy=FY(p.fy), col=dotColor('table',p.role);
-        add('line', { x1:cx-L*hx, y1:cy-L*hy, x2:cx+L*hx, y2:cy+L*hy, stroke:col, 'stroke-opacity':0.5, 'stroke-width':1, 'stroke-linecap':'round' });
-        add('circle', { cx:cx+L*hx, cy:cy+L*hy, r:1.6, fill:col, 'fill-opacity':0.8 }); });
+      pts.forEach(p=>{ const a=(p.angle||0)*Math.PI/180, hx=Math.sin(a), hy=-Math.cos(a),
+        cx=FX(p.fx), cy=FY(p.fy), hxp=cx+L*hx, hyp=cy+L*hy;
+        add('line', { x1:cx-L*hx, y1:cy-L*hy, x2:hxp, y2:hyp, stroke:col, 'stroke-opacity':0.5, 'stroke-width':1, 'stroke-linecap':'round' });
+        if(byRole) drawRoleGlyph(add, hxp, hyp, p.role, col, 8);
+        else add('circle', { cx:hxp, cy:hyp, r:1.7, fill:col, 'fill-opacity':0.85 }); });
     } else {
-      pts.forEach(p=> add('circle', { cx:FX(p.fx), cy:FY(p.fy), r:1.9, fill:dotColor(kind,p.role), 'fill-opacity':0.75 }));
+      pts.forEach(p=>{ const cx=FX(p.fx), cy=FY(p.fy);
+        if(byRole) drawRoleGlyph(add, cx, cy, p.role, col, 7.5);
+        else add('circle', { cx, cy, r:1.9, fill:col, 'fill-opacity':0.78 }); });
     }
-    // centroid
-    add('circle', { cx:FX(st.mx), cy:FY(st.my), r:2.8, fill:k.color, stroke:'#fff', 'stroke-width':0.9, 'stroke-opacity':0.85 });
   }
 
   function renderCanon(ctx){
@@ -215,10 +217,11 @@
       const k = el.dataset.k; if(visible.has(k)) visible.delete(k); else visible.add(k); render();
     }));
   }
+  const miniGlyph = role => `<svg viewBox="0 0 24 24" width="15" height="15" fill="#cdd9ee">${N.ROLE_GLYPH[role]}</svg>`;
   function setLegendC(){
     const el = document.getElementById('legendc');
     el.innerHTML = (mode==='reveal' && byRole)
-      ? `<span class="lg"><i style="background:${ROLE_COLOR.cs}"></i>CS</span><span class="lg"><i style="background:${ROLE_COLOR.clinical}"></i>Clinical</span><span class="lg"><i style="background:${ROLE_COLOR.other}"></i>Other</span>`
+      ? `<span class="lg">${miniGlyph('clinical')} Clinical</span><span class="lg">${miniGlyph('cs')} Computer science</span>`
       : '';
   }
 

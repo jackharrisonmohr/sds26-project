@@ -47,7 +47,7 @@ function handleSubmit(req, res){
       subs.set(cid, {
         clientId: cid,
         name: String(d.name || '').slice(0, 24),
-        role: ['cs','clinical','other'].includes(d.role) ? d.role : 'other',
+        role: ['cs','clinical'].includes(d.role) ? d.role : 'clinical',
         table,
         placements,
         ts: Date.now(),

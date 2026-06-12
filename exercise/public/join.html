@@ -17,17 +17,26 @@
   .mark{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;background:linear-gradient(150deg,#3a8bff,#0a7ea4)}
   .mark svg{width:17px;height:17px}
   .brand b{font-size:17px;letter-spacing:-.3px}
-  .task{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px;
+  .task{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px;
     box-shadow:0 1px 3px rgba(20,30,55,.07);margin-bottom:12px}
-  .task h1{margin:0 0 4px;font-size:16px;letter-spacing:-.2px}
-  .task p{margin:0;font-size:13.5px;color:var(--muted);line-height:1.5}
-  .task p b{color:var(--ink)}
-  .who{display:flex;gap:8px;align-items:center;margin:10px 0 12px;flex-wrap:wrap}
-  .who input{flex:1;min-width:120px;border:1px solid var(--line);border-radius:10px;padding:9px 11px;
+  .task h1{margin:0 0 11px;font-size:18px;letter-spacing:-.2px}
+  .task h1 span{color:var(--faint);font-weight:600;font-size:15px}
+  .steps{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:9px}
+  .steps li{display:flex;gap:11px;align-items:flex-start;font-size:14.5px;line-height:1.4}
+  .steps li b{font-weight:700}
+  .steps .n{flex:none;width:23px;height:23px;border-radius:50%;background:var(--accent);color:#fff;
+    font-size:13px;font-weight:700;display:grid;place-items:center;margin-top:1px}
+  .hint{margin-top:12px;padding-top:11px;border-top:1px solid var(--line);
+    font-size:12.5px;color:var(--muted);display:flex;align-items:center;gap:8px}
+  .hint .bdot{width:12px;height:12px;border-radius:50%;background:#0a84ff;flex:none;box-shadow:0 0 0 3px rgba(10,132,255,.18)}
+  .who{margin:10px 0 9px}
+  .who input{width:100%;border:1px solid var(--line);border-radius:10px;padding:10px 12px;
     font:inherit;font-size:14px;background:var(--card)}
-  .seg{display:inline-flex;background:#e6e8ed;border-radius:10px;padding:2px;gap:2px}
-  .seg button{border:none;background:transparent;border-radius:8px;padding:7px 12px;font:inherit;
-    font-size:12.5px;font-weight:600;color:var(--muted);cursor:pointer}
+  .rolepick{display:flex;align-items:center;gap:10px;margin:0 0 12px}
+  .rolepick .rl{font-size:13px;color:var(--muted);font-weight:600;flex:none}
+  .seg{display:inline-flex;flex:1;background:#e6e8ed;border-radius:10px;padding:2px;gap:2px}
+  .seg button{flex:1;border:none;background:transparent;border-radius:8px;padding:9px 10px;font:inherit;
+    font-size:13px;font-weight:600;color:var(--muted);cursor:pointer;white-space:nowrap}
   .seg button.on{background:var(--card);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.12)}
 
   #stage{position:relative;width:100%;aspect-ratio:183.6 / 169.2;
@@ -92,18 +101,22 @@
   </div>
 
   <div class="task">
-    <h1>Set up OR 4 for a laparoscopic cholecystectomy.</h1>
-    <p>Move and rotate the <b>OR table</b> (drag it, or drag the ⟳ knob), then drag the team and
-       equipment to where <b>you</b> think they go. The patient's <b>head</b> is the blue end.
-       <b>No other instructions.</b></p>
+    <h1>Set up OR 4 <span>· lap chole</span></h1>
+    <ol class="steps">
+      <li><span class="n">1</span><span>Move &amp; rotate the <b>OR table</b> — drag it, or the ⟳ knob</span></li>
+      <li><span class="n">2</span><span>Drag the <b>team &amp; equipment</b> where you'd put them</span></li>
+    </ol>
+    <div class="hint"><span class="bdot"></span>Blue end = patient's head · no other hints</div>
   </div>
 
   <div class="who">
     <input id="name" placeholder="Your name (optional)" maxlength="24" autocomplete="off" />
+  </div>
+  <div class="rolepick">
+    <span class="rl">You are</span>
     <div class="seg" id="role">
-      <button data-role="cs">CS</button>
       <button data-role="clinical">Clinical</button>
-      <button data-role="other" class="on">Other</button>
+      <button data-role="cs">Computer science</button>
     </div>
   </div>
 
@@ -134,11 +147,11 @@
   // ----- identity -----
   let clientId = localStorage.getItem('nolo_cid');
   if(!clientId){ clientId = 'c'+Math.random().toString(36).slice(2)+Date.now().toString(36); localStorage.setItem('nolo_cid', clientId); }
-  let role = 'other';
+  let role = null;
   document.getElementById('role').addEventListener('click', e=>{
     const b = e.target.closest('button'); if(!b) return;
     [...e.currentTarget.children].forEach(x=>x.classList.remove('on'));
-    b.classList.add('on'); role = b.dataset.role;
+    b.classList.add('on'); role = b.dataset.role; updateProgress();
   });
 
   const hexA = (hex,a)=>{ const h=hex.replace('#',''); return `rgba(${parseInt(h.slice(0,2),16)},${parseInt(h.slice(2,4),16)},${parseInt(h.slice(4,6),16)},${a})`; };
@@ -232,8 +245,12 @@
     const c = placedCount();
     document.getElementById('progress').innerHTML = `<b>${c}</b> / ${n} placed`;
     const btn = document.getElementById('submit');
-    btn.disabled = c < n; btn.textContent = c < n ? `Place all ${n} to submit` : 'Submit my set-up';
+    btn.disabled = !(c >= n && role);
+    btn.textContent = !role ? 'Pick Clinical or CS above'
+      : c < n ? `Place all ${n} to submit`
+      : 'Submit my set-up';
   }
+  updateProgress();
 
   // ===================== SUBMIT =====================
   document.getElementById('submit').addEventListener('click', async ()=>{

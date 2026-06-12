@@ -49,6 +49,11 @@
     anesm:    '<rect x="6.5" y="4.5" width="11" height="15" rx="1.5"/><path d="M9 8.5h6M9 11.5h6"/><circle cx="12" cy="15.5" r="1.5"/>',
     backtable:'<rect x="3.5" y="8" width="17" height="4" rx="1"/><path d="M6 12v6M18 12v6"/>',
   };
+  // role glyphs for the board's "icon by role" markers (filled, 24x24 box)
+  const ROLE_GLYPH = {
+    clinical: '<circle cx="12" cy="8" r="3.7"/><path d="M5 20.5c0-3.7 3.1-6.4 7-6.4s7 2.7 7 6.4z"/>',
+    cs:       '<rect x="3.3" y="4.6" width="17.4" height="11.4" rx="1.8"/><rect x="9.2" y="16.6" width="5.6" height="2.1"/><rect x="6.4" y="18.9" width="11.2" height="2.1" rx="1"/>',
+  };
 
   // ---- coordinate helpers -------------------------------------------------
   const FX = fx => MARGIN + fx * ROOM.w * U;
@@ -104,7 +109,7 @@
   }
 
   g.NOLO = {
-    NS, U, MARGIN, ROOM, VBW, VBH, KINDS, TOKENS, ELEMENTS, CANON, ROLE_ICON, EQUIP_ICON,
+    NS, U, MARGIN, ROOM, VBW, VBH, KINDS, TOKENS, ELEMENTS, CANON, ROLE_ICON, EQUIP_ICON, ROLE_GLYPH,
     FX, FY, pctX, pctY, fxFromClient, fyFromClient, clamp01, stats, angleStats, drawRoomBackdrop,
   };
 })(window);
