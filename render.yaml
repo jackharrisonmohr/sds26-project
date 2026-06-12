@@ -1,0 +1,15 @@
+# Render Blueprint — deploys the NOLO OR set-up exercise (exercise/).
+# A persistent Node process so SSE + in-memory submissions work unchanged.
+services:
+  - type: web
+    name: nolo-or-setup
+    runtime: node
+    plan: free
+    rootDir: exercise
+    buildCommand: npm install
+    startCommand: node server.js
+    healthCheckPath: /state
+    autoDeploy: true
+    envVars:
+      - key: RESET_KEY
+        value: nolo
