@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>NOLO — AI Operating Room Orchestration</title>
+<meta name="description" content="NOLO turns surgical prep from a manual, error-prone routine into a predictive, prescriptive workflow — the right setup, materials, people, and position for this patient, this case." />
+<style>
+  :root{
+    --bg:#ffffff; --ink:#0b1b3a; --muted:#5a6b86; --faint:#8a99b3;
+    --line:#e7ebf2; --card:#ffffff; --soft:#f5f7fb;
+    --accent:#1f7afc; --teal:#0a9ec4; --good:#2bb673; --warn:#ff9500; --bad:#ff3b30;
+    --grad:linear-gradient(150deg,#3a8bff,#0a7ea4);
+    --grad-deep:linear-gradient(160deg,#0b1b3a,#0a2540 55%,#072033);
+    --shadow:0 1px 3px rgba(20,30,55,.08),0 1px 1px rgba(20,30,55,.04);
+    --shadow-lg:0 24px 70px rgba(11,27,58,.18);
+    --radius:20px;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font:16px/1.6 -apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;}
+  a{color:inherit;text-decoration:none}
+  h1,h2,h3{letter-spacing:-.02em;line-height:1.1;margin:0}
+  .wrap{max-width:1120px;margin:0 auto;padding:0 24px}
+  .eyebrow{font-size:13px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--accent)}
+
+  /* nav */
+  .nav{position:sticky;top:0;z-index:50;backdrop-filter:saturate(180%) blur(14px);
+    background:rgba(255,255,255,.82);border-bottom:1px solid var(--line)}
+  .nav .wrap{display:flex;align-items:center;justify-content:space-between;height:64px}
+  .brand{display:flex;align-items:center;gap:11px;font-weight:700;font-size:19px;letter-spacing:-.3px}
+  .mark{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;background:var(--grad);
+    box-shadow:0 6px 18px rgba(10,40,90,.28),inset 0 1px 0 rgba(255,255,255,.35)}
+  .mark svg{width:19px;height:19px}
+  .nav-links{display:flex;align-items:center;gap:30px;font-size:14.5px;font-weight:500;color:var(--muted)}
+  .nav-links a:hover{color:var(--ink)}
+  .btn{display:inline-flex;align-items:center;gap:8px;border:none;cursor:pointer;font:inherit;font-weight:600;
+    border-radius:12px;padding:11px 20px;transition:.16s;white-space:nowrap}
+  .btn-primary{background:var(--grad);color:#fff;box-shadow:0 10px 26px rgba(20,90,180,.32)}
+  .btn-primary:hover{transform:translateY(-1px);box-shadow:0 14px 32px rgba(20,90,180,.4)}
+  .btn-ghost{background:var(--soft);color:var(--ink);border:1px solid var(--line)}
+  .btn-ghost:hover{background:#eef2f8}
+  .nav-links .nav-cta{display:none}
+  @media(min-width:760px){.nav-links .nav-cta{display:inline-flex}}
+
+  /* hero */
+  .hero{position:relative;overflow:hidden;background:
+      radial-gradient(900px 520px at 84% -10%,#2a6cff1f,transparent 60%),
+      radial-gradient(760px 520px at 4% 8%,#00c2c71f,transparent 55%);
+    padding:96px 0 78px}
+  .hero-grid{display:grid;gap:56px;align-items:center}
+  @media(min-width:940px){.hero-grid{grid-template-columns:1.05fr .95fr}}
+  .hero h1{font-size:clamp(40px,6vw,62px);font-weight:700}
+  .hero h1 .g{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .hero .lead{margin-top:22px;font-size:20px;line-height:1.5;color:var(--muted);max-width:560px}
+  .hero-cta{margin-top:34px;display:flex;flex-wrap:wrap;gap:14px}
+  .pill{display:inline-flex;align-items:center;gap:9px;background:#fff;border:1px solid var(--line);
+    border-radius:999px;padding:8px 15px;font-size:13.5px;font-weight:600;color:var(--muted);box-shadow:var(--shadow)}
+  .pill .dot{width:8px;height:8px;border-radius:50%;background:var(--good)}
+  .hero-pills{margin-top:30px;display:flex;flex-wrap:wrap;gap:10px}
+
+  /* device mock */
+  .device{position:relative;border-radius:30px;padding:14px;background:linear-gradient(160deg,#1b2c4d,#0a1830);
+    box-shadow:var(--shadow-lg);transform:perspective(1600px) rotateY(-9deg) rotateX(2deg);
+    transition:transform .5s cubic-bezier(.2,.7,.2,1)}
+  .device:hover{transform:perspective(1600px) rotateY(-3deg) rotateX(1deg)}
+  .screen{border-radius:18px;overflow:hidden;background:#eef0f4;aspect-ratio:4/3}
+  .screen iframe{width:166.66%;height:166.66%;border:0;transform:scale(.6);transform-origin:top left}
+  .device .nub{position:absolute;left:50%;top:7px;transform:translateX(-50%);width:46px;height:5px;border-radius:3px;background:#ffffff22}
+  .device-tag{position:absolute;right:18px;bottom:-16px;background:#fff;border:1px solid var(--line);
+    border-radius:12px;padding:9px 14px;font-size:12.5px;font-weight:700;color:var(--accent);box-shadow:var(--shadow)}
+
+  /* logo strip / problem band */
+  .band{background:var(--grad-deep);color:#fff;padding:78px 0}
+  .band .eyebrow{color:#7fb0ff}
+  .band h2{font-size:clamp(28px,4vw,40px);font-weight:700;margin-top:14px;max-width:760px}
+  .band p.sub{margin-top:18px;color:#aac4ec;font-size:18px;max-width:640px}
+  .stats{margin-top:52px;display:grid;gap:22px;grid-template-columns:repeat(2,1fr)}
+  @media(min-width:760px){.stats{grid-template-columns:repeat(4,1fr)}}
+  .stat{background:#ffffff0d;border:1px solid #ffffff1f;border-radius:18px;padding:24px 22px;backdrop-filter:blur(6px)}
+  .stat .n{font-size:42px;font-weight:700;letter-spacing:-.03em;background:linear-gradient(120deg,#7fb6ff,#5fe0e8);
+    -webkit-background-clip:text;background-clip:text;color:transparent}
+  .stat .l{margin-top:8px;font-size:14px;line-height:1.45;color:#c4d6f0}
+  .band .src{margin-top:30px;font-size:12.5px;color:#6f8cba}
+
+  /* sections */
+  section.pad{padding:96px 0}
+  .sec-head{max-width:680px}
+  .sec-head h2{font-size:clamp(28px,4vw,42px);font-weight:700;margin-top:14px}
+  .sec-head p{margin-top:18px;font-size:19px;color:var(--muted)}
+  .center{margin-left:auto;margin-right:auto;text-align:center}
+
+  /* how it works */
+  .flow{margin-top:56px;display:grid;gap:22px}
+  @media(min-width:860px){.flow{grid-template-columns:repeat(3,1fr)}}
+  .step{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:30px 26px;
+    box-shadow:var(--shadow);position:relative;transition:.2s}
+  .step:hover{transform:translateY(-4px);box-shadow:var(--shadow-lg)}
+  .step .num{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;font-weight:700;color:#fff;
+    background:var(--grad);font-size:16px}
+  .step h3{font-size:20px;margin-top:18px}
+  .step p{margin-top:10px;color:var(--muted);font-size:15px}
+  .step .tag{display:inline-block;margin-top:16px;font-size:12px;font-weight:700;color:var(--teal);
+    background:#e6f7fb;border-radius:8px;padding:4px 10px}
+
+  /* feature grid */
+  .features{margin-top:56px;display:grid;gap:22px}
+  @media(min-width:680px){.features{grid-template-columns:repeat(2,1fr)}}
+  @media(min-width:980px){.features{grid-template-columns:repeat(3,1fr)}}
+  .feat{background:var(--soft);border:1px solid var(--line);border-radius:18px;padding:26px 24px;transition:.2s}
+  .feat:hover{background:#fff;box-shadow:var(--shadow-lg);transform:translateY(-3px)}
+  .feat .ic{width:46px;height:46px;border-radius:13px;display:grid;place-items:center;background:#fff;
+    border:1px solid var(--line);box-shadow:var(--shadow)}
+  .feat .ic svg{width:24px;height:24px}
+  .feat h3{font-size:18px;margin-top:18px}
+  .feat p{margin-top:9px;color:var(--muted);font-size:14.5px}
+
+  /* comparison */
+  .compare{margin-top:52px;border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow)}
+  .compare-row{display:grid;grid-template-columns:1fr 1fr}
+  .compare-col{padding:34px 32px}
+  .compare-col.them{background:var(--soft)}
+  .compare-col.us{background:linear-gradient(160deg,#f3f9ff,#eafaff)}
+  .compare-col h3{font-size:17px;display:flex;align-items:center;gap:10px}
+  .compare-col.them h3{color:var(--muted)}
+  .compare-col ul{margin:20px 0 0;padding:0;list-style:none}
+  .compare-col li{position:relative;padding:9px 0 9px 30px;font-size:14.5px;color:var(--ink);border-top:1px solid var(--line)}
+  .compare-col li:first-child{border-top:none}
+  .compare-col.them li{color:var(--muted)}
+  .compare-col li::before{position:absolute;left:0;top:9px;font-weight:700}
+  .compare-col.them li::before{content:"✕";color:var(--bad);opacity:.7}
+  .compare-col.us li::before{content:"✓";color:var(--good)}
+  .chip{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:4px 9px;border-radius:7px}
+  .chip.them{background:#eef1f6;color:var(--faint)}
+  .chip.us{background:var(--grad);color:#fff}
+  @media(max-width:680px){.compare-row{grid-template-columns:1fr}}
+
+  /* impact / outcomes */
+  .outcomes{margin-top:52px;display:grid;gap:22px}
+  @media(min-width:760px){.outcomes{grid-template-columns:repeat(3,1fr)}}
+  .outcome{text-align:center;padding:34px 24px;border:1px solid var(--line);border-radius:var(--radius);background:#fff;box-shadow:var(--shadow)}
+  .outcome .n{font-size:40px;font-weight:700;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .outcome .l{margin-top:8px;color:var(--muted);font-size:15px}
+
+  /* CTA */
+  .cta{margin:0 0 0;padding:0}
+  .cta-card{background:var(--grad-deep);color:#fff;border-radius:28px;padding:64px 48px;text-align:center;
+    position:relative;overflow:hidden;box-shadow:var(--shadow-lg)}
+  .cta-card::before{content:"";position:absolute;inset:0;background:
+      radial-gradient(700px 360px at 80% -20%,#2a6cff33,transparent 60%),
+      radial-gradient(600px 360px at 0% 120%,#00c2c733,transparent 55%)}
+  .cta-card>*{position:relative}
+  .cta-card h2{font-size:clamp(28px,4vw,42px);font-weight:700}
+  .cta-card p{margin:18px auto 0;max-width:560px;color:#bcd2f0;font-size:18px}
+  .cta-card .btn{margin-top:32px}
+  .cta-card .btn-primary{background:#fff;color:#0a2540}
+  .cta-card .btn-primary:hover{box-shadow:0 14px 36px rgba(0,0,0,.32)}
+
+  /* footer */
+  footer{padding:54px 0 60px;border-top:1px solid var(--line);margin-top:96px}
+  .foot{display:flex;flex-wrap:wrap;justify-content:space-between;gap:24px;align-items:center}
+  .foot .brand{font-size:17px}
+  .foot .meta{color:var(--faint);font-size:13px;line-height:1.6}
+  .foot .tags{display:flex;gap:18px;font-size:13.5px;color:var(--muted)}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="nav">
+  <div class="wrap">
+    <a class="brand" href="#top">
+      <span class="mark"><svg viewBox="0 0 24 24" fill="#fff"><path d="M10 3h4v7h7v4h-7v7h-4v-7H3v-4h7z"/></svg></span>
+      NOLO
+    </a>
+    <div class="nav-links">
+      <a href="#problem">The problem</a>
+      <a href="#how">How it works</a>
+      <a href="#why">Why NOLO</a>
+      <a class="btn btn-primary nav-cta" href="/nolo-ipad.html">Launch demo →</a>
+    </div>
+  </div>
+</nav>
+
+<!-- HERO -->
+<header class="hero" id="top">
+  <div class="wrap hero-grid">
+    <div>
+      <span class="eyebrow">AI Operating-Room Orchestration</span>
+      <h1>The right setup, <span class="g">before the first incision.</span></h1>
+      <p class="lead">In surgery, everything starts with the setup. NOLO replaces static, drifting
+        preference cards with dynamic, patient-specific prep — predicting the optimal instruments,
+        people, devices, and positioning for <em>this</em> patient, <em>this</em> case.</p>
+      <div class="hero-cta">
+        <a class="btn btn-primary" href="/nolo-ipad.html">Launch the live demo →</a>
+        <a class="btn btn-ghost" href="#how">See how it works</a>
+      </div>
+      <div class="hero-pills">
+        <span class="pill"><span class="dot"></span>Predictive prep, not retrospective analytics</span>
+        <span class="pill"><span class="dot" style="background:var(--accent)"></span>Built for high-volume OR suites</span>
+      </div>
+    </div>
+    <div style="position:relative">
+      <div class="device">
+        <span class="nub"></span>
+        <div class="screen">
+          <iframe src="/nolo-ipad.html" title="NOLO demo preview" loading="lazy" scrolling="no" tabindex="-1"></iframe>
+        </div>
+      </div>
+      <div class="device-tag">Live · Personal OR Suite</div>
+    </div>
+  </div>
+</header>
+
+<!-- PROBLEM BAND -->
+<section class="band" id="problem">
+  <div class="wrap">
+    <span class="eyebrow">The problem</span>
+    <h2>Preference cards optimize for the average case. Nobody prepares for this patient, this case.</h2>
+    <p class="sub">Outdated, copied-and-reused setup lists drive simultaneous waste and risk — the
+      most common and most preventable causes of intraoperative disruption.</p>
+    <div class="stats">
+      <div class="stat"><div class="n">37%</div><div class="l">of surgical errors linked to <b>missing equipment</b></div></div>
+      <div class="stat"><div class="n">43%</div><div class="l">linked to <b>incorrect equipment configuration</b> or setup</div></div>
+      <div class="stat"><div class="n">30%</div><div class="l">longer OR occupancy when the team lacks the operative plan</div></div>
+      <div class="stat"><div class="n">11%</div><div class="l">of side errors directly attributable to <b>patient positioning</b></div></div>
+    </div>
+    <p class="src">Equipment-related problems remain among the most common causes of intraoperative
+      disruption; insufficient knowledge of the operative plan exacerbates complications.</p>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="pad" id="how">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow">How it works</span>
+      <h2>From scattered inputs to one prescriptive prep plan.</h2>
+      <p>NOLO fuses what the procedure truly needs, who the team is, and what makes this patient
+        different — then prescribes the setup before the case begins.</p>
+    </div>
+    <div class="flow">
+      <div class="step">
+        <div class="num">1</div>
+        <h3>Integrate</h3>
+        <p>Pull in patient-specific data, procedure type, surgeon preferences, historical case
+          patterns, and real-time hospital inventory.</p>
+        <span class="tag">Patient · Procedure · Team · Inventory</span>
+      </div>
+      <div class="step">
+        <div class="num">2</div>
+        <h3>Predict</h3>
+        <p>Models mine what was <em>actually used</em> from surgical video and case history to
+          ground-truth the real requirements — stripping waste, flagging patient-specific risks.</p>
+        <span class="tag">Video-mined tool usage · Risk flags</span>
+      </div>
+      <div class="step">
+        <div class="num">3</div>
+        <h3>Prescribe</h3>
+        <p>Deliver a tailored checklist and pick list: instruments, towers, energy devices,
+          staffing, consumables, and positioning — synced to today's OR list.</p>
+        <span class="tag">Checklist · Pick list · Safety flags</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section class="pad" style="background:var(--soft)" id="features">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow">The platform</span>
+      <h2>Five things that have to be right. NOLO gets them right, together.</h2>
+    </div>
+    <div class="features">
+      <div class="feat">
+        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="#1f7afc" stroke-width="1.8"><path d="M4 7h16M4 12h16M4 17h10"/></svg></div>
+        <h3>Materials & instruments</h3>
+        <p>Dynamic pick lists tuned to the case — drop the ~40% of card items never used, stage what this patient actually needs.</p>
+      </div>
+      <div class="feat">
+        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="#0a9ec4" stroke-width="1.8"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.4"/><path d="M3.5 19c.6-3 3-4.5 5.5-4.5S14 16 14.5 19M15 19c.3-2 1.8-3.2 3.5-3.2"/></svg></div>
+        <h3>People & staffing</h3>
+        <p>Right team, right roles — no one left out. Surface the operative plan so everyone walks in prepared.</p>
+      </div>
+      <div class="feat">
+        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="#2bb673" stroke-width="1.8"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="M8 21h8M12 18v3"/></svg></div>
+        <h3>Energy devices & towers</h3>
+        <p>Laparoscopic towers and energy devices configured correctly the first time — cutting the 43% of setup-related errors.</p>
+      </div>
+      <div class="feat">
+        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="#a855e0" stroke-width="1.8"><path d="M5 19c2-6 12-6 14 0M12 4l1.6 3.3L17 8l-2.5 2.4.6 3.4L12 12.2 8.9 13.8l.6-3.4L7 8l3.4-.7z"/></svg></div>
+        <h3>Patient positioning</h3>
+        <p>Prescribed positioning per procedure and patient — directly attacking side-errors and positioning complications.</p>
+      </div>
+      <div class="feat">
+        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="#ff9500" stroke-width="1.8"><path d="M12 3l8 4v5c0 5-3.5 8-8 9-4.5-1-8-4-8-9V7z"/><path d="M9.5 12l1.8 1.8L15 10"/></svg></div>
+        <h3>Patient-specific safety</h3>
+        <p>Allergy swaps, anticoagulation hemostatics, conversion-to-open trays — comorbidity-driven flags surfaced at prep time.</p>
+      </div>
+      <div class="feat">
+        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="#1f7afc" stroke-width="1.8"><path d="M4 19V5M4 19h16M8 16l3-4 3 2 4-6"/></svg></div>
+        <h3>Inventory & cost intelligence</h3>
+        <p>Real-time inventory awareness cuts waste, delays, and cancellations — and scales into full perioperative decision support.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- WHY NOLO / COMPARISON -->
+<section class="pad" id="why">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow">Why NOLO</span>
+      <h2>Others look backward. NOLO decides forward.</h2>
+      <p>Existing platforms focus on retrospective OR analytics, documentation, or scheduling.
+        NOLO actively determines the optimal intraoperative configuration <em>before</em> surgery begins.</p>
+    </div>
+    <div class="compare">
+      <div class="compare-row">
+        <div class="compare-col them">
+          <h3><span class="chip them">Today</span> Retrospective tools</h3>
+          <ul>
+            <li>Analyze cases after they happen</li>
+            <li>Static preference cards that drift out of date</li>
+            <li>Documentation & scheduling, not prep decisions</li>
+            <li>Optimize for the average case</li>
+            <li>Waste and missing-item delays persist</li>
+          </ul>
+        </div>
+        <div class="compare-col us">
+          <h3><span class="chip us">NOLO</span> Predictive orchestration</h3>
+          <ul>
+            <li>Prescribes the setup before the first incision</li>
+            <li>Dynamic, data-driven recommendations per case</li>
+            <li>Acts on prep: instruments, people, devices, position</li>
+            <li>Optimizes for this patient, this case</li>
+            <li>Strips waste while adding safety items</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div class="outcomes">
+      <div class="outcome"><div class="n">Fewer</div><div class="l">preventable delays, cancellations & material waste</div></div>
+      <div class="outcome"><div class="n">Safer</div><div class="l">cases through patient-specific prep & positioning</div></div>
+      <div class="outcome"><div class="n">Faster</div><div class="l">turnover and maximized theatre efficiency</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="pad" style="padding-top:0">
+  <div class="wrap">
+    <div class="cta-card">
+      <span class="eyebrow" style="color:#7fb0ff">No One Left Out</span>
+      <h2>See NOLO orchestrate a real OR list.</h2>
+      <p>A working prototype of the Personal OR Suite — patient-specific setup, materials, people,
+        space and position, synced to today's schedule.</p>
+      <a class="btn btn-primary" href="/nolo-ipad.html">Launch the live demo →</a>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="wrap foot">
+    <div>
+      <a class="brand" href="#top">
+        <span class="mark"><svg viewBox="0 0 24 24" fill="#fff"><path d="M10 3h4v7h7v4h-7v7h-4v-7H3v-4h7z"/></svg></span>
+        NOLO
+      </a>
+      <div class="meta" style="margin-top:12px">AI-powered operating-room orchestration.<br>SaaS for high-volume & resource-constrained surgical centers.</div>
+    </div>
+    <div class="tags">
+      <a href="#problem">Problem</a>
+      <a href="#how">How it works</a>
+      <a href="#why">Why NOLO</a>
+      <a href="/nolo-ipad.html">Demo</a>
+    </div>
+  </div>
+  <div class="wrap meta" style="margin-top:26px;color:var(--faint)">© 2026 NOLO · SDS Summer School Group 3 — research prototype.</div>
+</footer>
+
+</body>
+</html>

@@ -1,1 +1,3 @@
-/    /nolo.html   200
+# root serves index.html (landing page) automatically
+/app    /nolo-ipad.html   200
+/demo   /nolo-ipad.html   200
