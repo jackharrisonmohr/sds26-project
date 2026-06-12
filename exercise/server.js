@@ -36,10 +36,19 @@ function handleSubmit(req, res){
         const p = d.placements[k]; const fx = num(p && p.fx), fy = num(p && p.fy);
         if(fx !== null && fy !== null) placements[k] = { fx, fy };
       }
+      let table = null;
+      if(d.table){
+        const fx = num(d.table.fx), fy = num(d.table.fy);
+        if(fx !== null && fy !== null){
+          const angle = Number.isFinite(+d.table.angle) ? +d.table.angle : 0;
+          table = { fx, fy, angle };
+        }
+      }
       subs.set(cid, {
         clientId: cid,
         name: String(d.name || '').slice(0, 24),
         role: ['cs','clinical','other'].includes(d.role) ? d.role : 'other',
+        table,
         placements,
         ts: Date.now(),
       });
