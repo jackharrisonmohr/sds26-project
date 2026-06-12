@@ -555,6 +555,7 @@ const KINDS = {
   circ   :{label:'Circulating', color:'#ff9f0a', cat:'person'},
   table    :{label:'OR table', color:'#5b6b82', cat:'equip', w:2.0, h:0.6},
   backtable:{label:'Scrub back table', color:'#28b463', cat:'equip', w:1.5, h:0.6},
+  instrtable:{label:'Instrument table', color:'#28b463', cat:'equip', w:0.6, h:1.5},
   mayo     :{label:'Mayo stand', color:'#28b463', cat:'equip', w:0.55, h:0.45},
   anesm    :{label:'Anaesthesia machine', color:'#a855e0', cat:'equip', w:0.85, h:0.65},
   tower    :{label:'Lap tower', color:'#8e8e93', cat:'equip', w:0.65, h:0.6},
@@ -576,9 +577,10 @@ const PROCEDURES = {
       {kind:'assist', fx:0.34, fy:0.64, label:'Cam/Asst'},
       {kind:'mayo', fx:0.6, fy:0.4},
       {kind:'scrub', fx:0.7, fy:0.64, side:true},
-      {kind:'backtable', fx:0.84, fy:0.58, side:true},
+      {kind:'backtable', fx:0.77, fy:0.835, side:true},
+      {kind:'instrtable', fx:0.84, fy:0.46, side:true},
       {kind:'tower', fx:0.72, fy:0.26},
-      {kind:'circ', fx:0.88, fy:0.84},
+      {kind:'circ', fx:0.59, fy:0.87},
     ],
     instruments:[
       {nm:'Maryland dissector'},{nm:'Hook electrocautery'},{nm:'Clip applier (Hem-o-lok)'},
@@ -868,10 +870,7 @@ let _planN=0;      // unique-id counter for per-svg filters
 /* learned drift — where pieces actually end up vs the plan (fractions of room) */
 const DRIFT={
   lap_chole:[
-    {kind:'backtable', dfx:0.09, dfy:0.07, note:'pulled toward the door for faster restock'},
-    {kind:'tower',     dfx:-0.07, dfy:0.05, note:'angled into the surgeon’s eyeline'},
-    {kind:'mayo',      dfx:-0.07, dfy:0.05, note:'moved within arm’s reach'},
-    {kind:'circ',      dfx:-0.07, dfy:-0.05, note:'repositioned at the count station'},
+    {kind:'instrtable', dfx:0, dfy:0.192, note:'pulled down to the end of the back table to widen the circulation path'},
   ],
   tha:[
     {kind:'backtable', dfx:0.07, dfy:0.06, note:'shifted toward the implant trays'},
@@ -1040,11 +1039,11 @@ function renderPlan(P,S,facs){
     const arrows=changes.map(c=>{const a=planned.find(x=>x.id===c.id),b=obs.find(x=>x.id===c.id);return{fx0:a.fx,fy0:a.fy,fx1:b.fx,fy1:b.fy};});
     drawPlan(svgO, room, obs, {highlight:hl, arrows, dim:true});
     if(state.accepted==='accepted'){
-      extra.innerHTML=`<div class="diff-suggest done-acc"><span class="sg-ic">✓</span><div class="sg-tx"><b>Template updated.</b> Next ${state.or} ${P.short} will start from these ${changes.length} positions.</div><button class="sg-btn ghost" id="dsUndo">Undo</button></div>`;
+      extra.innerHTML=`<div class="diff-suggest done-acc"><span class="sg-ic">✓</span><div class="sg-tx"><b>Template updated.</b> Next ${state.or} ${P.short} will start from ${changes.length===1?'this position':`these ${changes.length} positions`}.</div><button class="sg-btn ghost" id="dsUndo">Undo</button></div>`;
     } else if(state.accepted==='dismissed'){
       extra.innerHTML=`<div class="diff-suggest done-dis"><span class="sg-ic muted">✕</span><div class="sg-tx">Suggestion dismissed — template left unchanged.</div><button class="sg-btn ghost" id="dsUndo">Undo</button></div>`;
     } else {
-      extra.innerHTML=`<div class="diff-suggest"><div class="ds-head"><span class="ai-dot"></span><b>NOLO suggests ${changes.length} template changes</b> — adopt how the room actually ended up for next time? <span class="ds-q">Do you accept?</span></div>`+
+      extra.innerHTML=`<div class="diff-suggest"><div class="ds-head"><span class="ai-dot"></span><b>NOLO suggests ${changes.length===1?'1 template change':`${changes.length} template changes`}</b> — adopt how the room actually ended up for next time? <span class="ds-q">Do you accept?</span></div>`+
         `<div class="diff-list">`+changes.map(c=>`<span class="diff-chip"><b>${c.label}</b> ${c.note}</span>`).join('')+`</div>`+
         `<div class="ds-actions"><button class="sg-btn" id="dsAccept">Accept changes</button><button class="sg-btn ghost" id="dsDismiss">Dismiss</button></div></div>`;
     }

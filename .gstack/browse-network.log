@@ -1,1 +1,2 @@
-[2026-06-11T23:13:31.564Z] GET http://localhost:8765/nolo-ipad.html → 200 (17ms, 69049B)
+[2026-06-12T10:20:46.153Z] GET http://localhost:3000/join → 200 (3ms, ?B)
+[2026-06-12T10:20:46.160Z] GET http://localhost:3000/shared.js → 200 (6ms, ?B)
